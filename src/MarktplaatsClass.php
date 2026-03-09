@@ -2,6 +2,4 @@
 
 namespace NiekNijland\Marktplaats;
 
-class MarktplaatsClass
-{
-}
+class MarktplaatsClass {}

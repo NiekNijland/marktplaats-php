@@ -3,7 +3,3 @@ parameters:
     paths:
         - src
     tmpDir: build/phpstan
-    ignoreErrors:
-        -
-            identifier: method.childParameterType
-            path: src/Data/MotorcycleSearchQuery.php

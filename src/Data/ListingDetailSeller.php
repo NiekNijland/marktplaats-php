@@ -10,7 +10,7 @@ readonly class ListingDetailSeller
      * @param  list<string>  $contactOptions
      */
     public function __construct(
-        public ?int $id = null,
+        public int $id,
         public ?string $name = null,
         public ?string $pageUrl = null,
         public ?string $sellerType = null,
@@ -49,7 +49,7 @@ readonly class ListingDetailSeller
     public static function fromArray(array $data): self
     {
         return new self(
-            id: isset($data['id']) ? (int) $data['id'] : null,
+            id: (int) ($data['id'] ?? 0),
             name: $data['name'] ?? null,
             pageUrl: $data['pageUrl'] ?? null,
             sellerType: $data['sellerType'] ?? null,

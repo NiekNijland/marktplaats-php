@@ -7,7 +7,7 @@ namespace NiekNijland\Marktplaats\Data;
 readonly class ListingDetailCategory
 {
     public function __construct(
-        public ?int $id = null,
+        public int $id,
         public ?string $name = null,
         public ?string $fullName = null,
         public ?int $parentId = null,
@@ -15,7 +15,7 @@ readonly class ListingDetailCategory
     ) {}
 
     /**
-     * @return array{id: ?int, name: ?string, fullName: ?string, parentId: ?int, parentName: ?string}
+     * @return array{id: int, name: ?string, fullName: ?string, parentId: ?int, parentName: ?string}
      */
     public function toArray(): array
     {
@@ -34,7 +34,7 @@ readonly class ListingDetailCategory
     public static function fromArray(array $data): self
     {
         return new self(
-            id: isset($data['id']) ? (int) $data['id'] : null,
+            id: (int) ($data['id'] ?? 0),
             name: $data['name'] ?? null,
             fullName: $data['fullName'] ?? null,
             parentId: isset($data['parentId']) ? (int) $data['parentId'] : null,

@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace NiekNijland\Marktplaats\Tests\Integration;
 
 use NiekNijland\Marktplaats\Client;
-use NiekNijland\Marktplaats\Data\MotorcycleBrand;
-use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
+use NiekNijland\Marktplaats\Data\Category;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use PHPUnit\Framework\TestCase;
 
@@ -36,25 +35,29 @@ class IntegrationTest extends TestCase
         }
     }
 
-    public function test_live_motorcycle_search(): void
+    public function test_live_search_with_excluded_categories(): void
     {
         $client = new Client;
-        $query = new MotorcycleSearchQuery(limit: 5);
-        $result = $client->getMotorcycleSearch($query);
+        $query = new SearchQuery(
+            l1CategoryId: 678,
+            excludedCategoryIds: [723, 724],
+            limit: 5,
+        );
+        $result = $client->getSearch($query);
 
         $this->assertGreaterThanOrEqual(0, $result->totalResultCount);
     }
 
-    public function test_live_brand_catalog_discovery(): void
+    public function test_live_category_catalog_discovery(): void
     {
         $client = new Client;
-        $catalog = $client->getMotorcycleBrandCatalog();
+        $catalog = $client->getCategoryCatalog(678);
 
-        $this->assertSame(678, $catalog->sourceCategoryId);
-        $this->assertNotEmpty($catalog->brands);
+        $this->assertSame(678, $catalog->parentCategoryId);
+        $this->assertNotEmpty($catalog->categories);
 
-        $brandNames = array_map(fn (MotorcycleBrand $b): string => $b->name, $catalog->brands);
-        $this->assertContains('Honda', $brandNames);
-        $this->assertContains('Yamaha', $brandNames);
+        $categoryNames = array_map(fn (Category $category): ?string => $category->name, $catalog->categories);
+        $this->assertContains('Honda', $categoryNames);
+        $this->assertContains('Yamaha', $categoryNames);
     }
 }

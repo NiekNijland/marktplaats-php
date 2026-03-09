@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Data;
 
-readonly class SearchCategoryOption
+readonly class Category
 {
     public function __construct(
         public int $id,

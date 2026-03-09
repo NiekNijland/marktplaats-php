@@ -11,6 +11,7 @@ use NiekNijland\Marktplaats\Testing\FakeClient;
 use NiekNijland\Marktplaats\Testing\ListingDetailFactory;
 use NiekNijland\Marktplaats\Testing\ListingFactory;
 use NiekNijland\Marktplaats\Testing\SearchResultFactory;
+use NiekNijland\Marktplaats\Data\SearchQuery;
 
 $fake = new FakeClient();
 
@@ -47,15 +48,15 @@ All factories follow the same pattern: `make(array $overrides = [])` and `makeMa
 | `PriceInfoFactory` | `PriceInfo` |
 | `LocationFactory` | `Location` |
 | `SellerInformationFactory` | `SellerInformation` |
-| `MotorcycleBrandFactory` | `MotorcycleBrand` |
-| `MotorcycleBrandCatalogFactory` | `MotorcycleBrandCatalog` |
+| `CategoryFactory` | `Category` |
+| `CategoryCatalogFactory` | `CategoryCatalog` |
 
 ## Assertions
 
 ```php
 $fake->assertCalled('getSearch');
 $fake->assertNotCalled('getListing');
-$fake->assertCalledTimes('getMotorcycleSearch', 2);
+$fake->assertCalledTimes('getSearch', 2);
 ```
 
 ## Simulating Errors

@@ -7,12 +7,12 @@ namespace NiekNijland\Marktplaats\Data;
 readonly class ListingHighlight
 {
     public function __construct(
-        public ?string $key,
+        public string $key,
         public ?string $value,
     ) {}
 
     /**
-     * @return array{key: ?string, value: ?string}
+     * @return array{key: string, value: ?string}
      */
     public function toArray(): array
     {
@@ -23,12 +23,12 @@ readonly class ListingHighlight
     }
 
     /**
-     * @param  array{key?: ?string, value?: ?string}  $data
+     * @param  array{key?: string, value?: ?string}  $data
      */
     public static function fromArray(array $data): self
     {
         return new self(
-            key: $data['key'] ?? null,
+            key: $data['key'] ?? '',
             value: $data['value'] ?? null,
         );
     }

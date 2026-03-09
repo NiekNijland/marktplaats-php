@@ -103,16 +103,16 @@ readonly class Listing
             location: isset($data['location']) ? Location::fromArray($data['location']) : null,
             imageUrls: $data['imageUrls'] ?? [],
             pictures: array_map(
-                fn (array $p): ListingPicture => ListingPicture::fromArray($p),
+                static fn (array $p): ListingPicture => ListingPicture::fromArray($p),
                 $data['pictures'] ?? [],
             ),
             sellerInformation: isset($data['sellerInformation']) ? SellerInformation::fromArray($data['sellerInformation']) : null,
             attributes: array_map(
-                fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
+                static fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
                 $data['attributes'] ?? [],
             ),
             extendedAttributes: array_map(
-                fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
+                static fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
                 $data['extendedAttributes'] ?? [],
             ),
             traits: $data['traits'] ?? [],
@@ -129,11 +129,11 @@ readonly class Listing
             pageLocation: $data['pageLocation'] ?? null,
             opvalStickerText: $data['opvalStickerText'] ?? null,
             highlights: array_map(
-                fn (array $h): ListingHighlight => ListingHighlight::fromArray($h),
+                static fn (array $h): ListingHighlight => ListingHighlight::fromArray($h),
                 $data['highlights'] ?? [],
             ),
             trustIndicators: array_map(
-                fn (array $t): ListingTrustIndicator => ListingTrustIndicator::fromArray($t),
+                static fn (array $t): ListingTrustIndicator => ListingTrustIndicator::fromArray($t),
                 $data['trustIndicators'] ?? [],
             ),
         );

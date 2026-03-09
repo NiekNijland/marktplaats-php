@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Tests;
 
+use NiekNijland\Marktplaats\Data\Category;
 use NiekNijland\Marktplaats\Data\Enums\PriceType;
-use NiekNijland\Marktplaats\Data\MotorcycleBrand;
 use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Parser\SearchParser;
@@ -216,45 +216,42 @@ class ParserTest extends TestCase
         $this->parser->parseJson('not valid json');
     }
 
-    public function test_parse_motorcycle_brand_catalog(): void
+    public function test_parse_category_catalog(): void
     {
         $json = $this->loadFixture('search-motorcycle-brand-catalog.json');
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-        $catalog = $this->parser->parseMotorcycleBrandCatalog($data);
+        $catalog = $this->parser->parseCategoryCatalog($data, 678);
 
-        // Should include real brands, exclude non-brands
-        $brandNames = array_map(fn (MotorcycleBrand $b): string => $b->name, $catalog->brands);
+        $categoryNames = array_map(fn (Category $category): ?string => $category->name, $catalog->categories);
 
-        $this->assertContains('Honda', $brandNames);
-        $this->assertContains('BMW', $brandNames);
-        $this->assertContains('Yamaha', $brandNames);
-        $this->assertNotContains('Oldtimers', $brandNames);
-        $this->assertNotContains('Schademotoren', $brandNames);
-        $this->assertNotContains('Overige merken', $brandNames);
-        $this->assertNotContains('Zijspanmotoren', $brandNames);
-        $this->assertNotContains('Motorkleding', $brandNames);
+        $this->assertContains('Honda', $categoryNames);
+        $this->assertContains('BMW', $categoryNames);
+        $this->assertContains('Yamaha', $categoryNames);
+        $this->assertContains('Oldtimers', $categoryNames);
+        $this->assertContains('Schademotoren', $categoryNames);
+        $this->assertContains('Motorkleding', $categoryNames);
     }
 
-    public function test_parse_motorcycle_brand_catalog_brand_fields(): void
+    public function test_parse_category_catalog_fields(): void
     {
         $json = $this->loadFixture('search-motorcycle-brand-catalog.json');
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-        $catalog = $this->parser->parseMotorcycleBrandCatalog($data);
+        $catalog = $this->parser->parseCategoryCatalog($data, 678);
 
         $honda = null;
 
-        foreach ($catalog->brands as $brand) {
-            if ($brand->key === 'honda') {
-                $honda = $brand;
+        foreach ($catalog->categories as $category) {
+            if ($category->key === 'honda') {
+                $honda = $category;
                 break;
             }
         }
 
         $this->assertNotNull($honda);
-        $this->assertSame(696, $honda->categoryId);
+        $this->assertSame(696, $honda->id);
         $this->assertSame('Honda', $honda->name);
         $this->assertSame('Motoren | Honda', $honda->fullName);
-        $this->assertSame(678, $honda->parentCategoryId);
+        $this->assertSame(678, $honda->parentId);
     }
 
     public function test_to_array_from_array_roundtrip(): void

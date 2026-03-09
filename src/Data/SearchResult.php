@@ -11,7 +11,7 @@ readonly class SearchResult
      * @param  Listing[]  $topBlock
      * @param  SearchFacet[]  $facets
      * @param  SortOption[]  $sortOptions
-     * @param  SearchCategoryOption[]  $searchCategoryOptions
+     * @param  Category[]  $searchCategoryOptions
      */
     public function __construct(
         public array $listings,
@@ -43,7 +43,7 @@ readonly class SearchResult
             'originalQuery' => $this->originalQuery,
             'sortOptions' => array_map(fn (SortOption $s): array => $s->toArray(), $this->sortOptions),
             'searchCategory' => $this->searchCategory,
-            'searchCategoryOptions' => array_map(fn (SearchCategoryOption $o): array => $o->toArray(), $this->searchCategoryOptions),
+            'searchCategoryOptions' => array_map(fn (Category $o): array => $o->toArray(), $this->searchCategoryOptions),
             'searchRequest' => $this->searchRequest?->toArray(),
             'metaTags' => $this->metaTags?->toArray(),
         ];
@@ -77,7 +77,7 @@ readonly class SearchResult
             ),
             searchCategory: $data['searchCategory'] ?? null,
             searchCategoryOptions: array_map(
-                fn (array $o): SearchCategoryOption => SearchCategoryOption::fromArray(['id' => (int) ($o['id'] ?? 0)] + $o),
+                fn (array $o): Category => Category::fromArray(['id' => (int) ($o['id'] ?? 0)] + $o),
                 $data['searchCategoryOptions'] ?? [],
             ),
             searchRequest: isset($data['searchRequest']) ? SearchRequest::fromArray($data['searchRequest']) : null,

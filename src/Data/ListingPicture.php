@@ -22,7 +22,7 @@ readonly class ListingPicture
     ) {}
 
     /**
-     * @return array{id: ?int, mediaId: ?string, url: ?string, extraSmallUrl: ?string, mediumUrl: ?string, largeUrl: ?string, extraExtraLargeUrl: ?string, sizes: array<string, string>, aspectRatio: ?array{width: ?int, height: ?int}}
+     * @return array{id: ?int, mediaId: ?string, url: ?string, extraSmallUrl: ?string, mediumUrl: ?string, largeUrl: ?string, extraExtraLargeUrl: ?string, sizes: array<string, string>, aspectRatio: ?array{width: int, height: int}}
      */
     public function toArray(): array
     {
@@ -40,7 +40,7 @@ readonly class ListingPicture
     }
 
     /**
-     * @param  array{id?: ?int, mediaId?: ?string, url?: ?string, extraSmallUrl?: ?string, mediumUrl?: ?string, largeUrl?: ?string, extraExtraLargeUrl?: ?string, sizes?: array<string, string>, aspectRatio?: ?array{width?: ?int, height?: ?int}}  $data
+     * @param  array{id?: ?int, mediaId?: ?string, url?: ?string, extraSmallUrl?: ?string, mediumUrl?: ?string, largeUrl?: ?string, extraExtraLargeUrl?: ?string, sizes?: array<string, string>, aspectRatio?: ?array{width?: int, height?: int}}  $data
      */
     public static function fromArray(array $data): self
     {

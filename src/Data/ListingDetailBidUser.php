@@ -7,12 +7,12 @@ namespace NiekNijland\Marktplaats\Data;
 readonly class ListingDetailBidUser
 {
     public function __construct(
-        public ?int $id = null,
+        public int $id,
         public ?string $nickname = null,
     ) {}
 
     /**
-     * @return array{id: ?int, nickname: ?string}
+     * @return array{id: int, nickname: ?string}
      */
     public function toArray(): array
     {
@@ -28,7 +28,7 @@ readonly class ListingDetailBidUser
     public static function fromArray(array $data): self
     {
         return new self(
-            id: isset($data['id']) ? (int) $data['id'] : null,
+            id: (int) ($data['id'] ?? 0),
             nickname: $data['nickname'] ?? null,
         );
     }

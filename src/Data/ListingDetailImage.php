@@ -7,7 +7,7 @@ namespace NiekNijland\Marktplaats\Data;
 readonly class ListingDetailImage
 {
     public function __construct(
-        public ?string $mediaId = null,
+        public string $mediaId,
         public ?string $baseUrl = null,
         public ?int $originalWidth = null,
         public ?int $originalHeight = null,
@@ -15,7 +15,7 @@ readonly class ListingDetailImage
     ) {}
 
     /**
-     * @return array{mediaId: ?string, baseUrl: ?string, originalWidth: ?int, originalHeight: ?int, aspectRatio: ?array{width: ?int, height: ?int}}
+     * @return array{mediaId: string, baseUrl: ?string, originalWidth: ?int, originalHeight: ?int, aspectRatio: ?array{width: int, height: int}}
      */
     public function toArray(): array
     {
@@ -34,7 +34,7 @@ readonly class ListingDetailImage
     public static function fromArray(array $data): self
     {
         return new self(
-            mediaId: $data['mediaId'] ?? null,
+            mediaId: $data['mediaId'] ?? '',
             baseUrl: $data['base'] ?? $data['baseUrl'] ?? null,
             originalWidth: isset($data['originalWidth']) ? (int) $data['originalWidth'] : null,
             originalHeight: isset($data['originalHeight']) ? (int) $data['originalHeight'] : null,

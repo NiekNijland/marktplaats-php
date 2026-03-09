@@ -21,31 +21,26 @@ foreach ($result->listings as $listing) {
 }
 ```
 
-## Motorcycle Search with Brand Discovery
+## Category Search with Catalog Discovery
 
-Brand category IDs are never hardcoded. Discover them live from the API:
+Subcategory IDs are never hardcoded. Discover them live from the API metadata:
 
 ```php
 use NiekNijland\Marktplaats\Client;
-use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
+use NiekNijland\Marktplaats\Data\SearchQuery;
 
 $client = new Client();
 
-$catalog = $client->getMotorcycleBrandCatalog();
+$catalog = $client->getCategoryCatalog(678); // Motoren
 
-$honda = null;
-foreach ($catalog->brands as $brand) {
-    if ($brand->key === 'motoren-honda') {
-        $honda = $brand;
-        break;
-    }
-}
+$honda = $catalog->findByName('Honda');
 
-$result = $client->getMotorcycleSearch(new MotorcycleSearchQuery(
-    brand: $honda,
+$result = $client->getSearch(new SearchQuery(
+    l1CategoryId: 678,
+    l2CategoryId: $honda?->id,
+    excludedCategoryIds: [723, 724], // optional client-side exclusions
 ));
 
-// Strict mode (default) filters out non-bike categories like accessories
 foreach ($result->listings as $listing) {
     echo $listing->title . PHP_EOL;
 }
@@ -55,11 +50,11 @@ foreach ($result->listings as $listing) {
 
 ```php
 use NiekNijland\Marktplaats\Client;
-use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
+use NiekNijland\Marktplaats\Data\SearchQuery;
 
 $client = new Client();
 
-foreach ($client->getSearchAll(new MotorcycleSearchQuery()) as $listing) {
+foreach ($client->getSearchAll(new SearchQuery(l1CategoryId: 678)) as $listing) {
     echo $listing->itemId . ': ' . $listing->title . PHP_EOL;
 }
 ```
@@ -114,7 +109,7 @@ foreach ($detail->attributes as $attr) {
 
 if ($detail->bidsInfo?->isBiddingEnabled) {
     foreach ($detail->bidsInfo->bids as $bid) {
-        echo $bid->user?->nickname . ' bid ' . $bid->value . ' cents' . PHP_EOL;
+        echo $bid->user?->nickname . ' bid ' . $bid->valueCents . ' cents' . PHP_EOL;
     }
 }
 ```
@@ -128,7 +123,7 @@ $detail = $client->getListing($listing->vipUrl);
 
 ## Caching
 
-Inject any PSR-16 cache to avoid redundant API calls. Caching applies to search results, brand catalog discovery, and listing detail pages:
+Inject any PSR-16 cache to avoid redundant API calls. Caching applies to search results, category catalog discovery, and listing detail pages:
 
 ```php
 use NiekNijland\Marktplaats\Client;

@@ -6,17 +6,16 @@ namespace NiekNijland\Marktplaats\Parser;
 
 use DateTimeImmutable;
 use JsonException;
+use NiekNijland\Marktplaats\Data\Category;
+use NiekNijland\Marktplaats\Data\CategoryCatalog;
 use NiekNijland\Marktplaats\Data\Listing;
 use NiekNijland\Marktplaats\Data\ListingAttribute;
 use NiekNijland\Marktplaats\Data\ListingHighlight;
 use NiekNijland\Marktplaats\Data\ListingPicture;
 use NiekNijland\Marktplaats\Data\ListingTrustIndicator;
 use NiekNijland\Marktplaats\Data\Location;
-use NiekNijland\Marktplaats\Data\MotorcycleBrand;
-use NiekNijland\Marktplaats\Data\MotorcycleBrandCatalog;
 use NiekNijland\Marktplaats\Data\PictureAspectRatio;
 use NiekNijland\Marktplaats\Data\PriceInfo;
-use NiekNijland\Marktplaats\Data\SearchCategoryOption;
 use NiekNijland\Marktplaats\Data\SearchFacet;
 use NiekNijland\Marktplaats\Data\SearchFacetAttributeGroupOption;
 use NiekNijland\Marktplaats\Data\SearchFacetCategory;
@@ -30,21 +29,6 @@ use NiekNijland\Marktplaats\Exception\ClientException;
 class SearchParser
 {
     private const string BASE_URL = 'https://www.marktplaats.nl';
-
-    /**
-     * Non-brand category names excluded from brand catalog discovery.
-     *
-     * @var string[]
-     */
-    private const array NON_BRAND_NAMES = [
-        'Oldtimers',
-        'Schademotoren',
-        'Overige merken',
-        'Zijspanmotoren',
-        'Overige Motoren',
-        'Quads en Trikes',
-        'Motorkleding',
-    ];
 
     /**
      * @param  array<string, mixed>  $data
@@ -82,42 +66,31 @@ class SearchParser
     /**
      * @param  array<string, mixed>  $data
      */
-    public function parseMotorcycleBrandCatalog(array $data, int $sourceCategoryId = 678): MotorcycleBrandCatalog
+    public function parseCategoryCatalog(array $data, int $parentCategoryId): CategoryCatalog
     {
         $categoryOptions = $data['searchCategoryOptions'] ?? [];
-        $brands = [];
+        $categories = [];
 
         foreach ($categoryOptions as $option) {
-            $fullName = $option['fullName'] ?? '';
+            $optionParentId = isset($option['parentId']) ? (int) $option['parentId'] : null;
 
-            if (! str_starts_with($fullName, 'Motoren | ')) {
+            if ($optionParentId !== $parentCategoryId) {
                 continue;
             }
 
-            $name = $option['name'] ?? '';
-
-            if (in_array($name, self::NON_BRAND_NAMES, true)) {
-                continue;
-            }
-
-            $parentId = $option['parentId'] ?? null;
-
-            if ($parentId !== $sourceCategoryId) {
-                continue;
-            }
-
-            $brands[] = new MotorcycleBrand(
-                categoryId: (int) $option['id'],
-                key: (string) ($option['key'] ?? ''),
-                name: $name,
-                fullName: $fullName,
-                parentCategoryId: $parentId,
+            $categories[] = new Category(
+                id: (int) ($option['id'] ?? 0),
+                key: isset($option['key']) ? (string) $option['key'] : null,
+                name: isset($option['name']) ? (string) $option['name'] : null,
+                fullName: isset($option['fullName']) ? (string) $option['fullName'] : null,
+                parentId: $optionParentId,
+                parentKey: isset($option['parentKey']) ? (string) $option['parentKey'] : null,
             );
         }
 
-        return new MotorcycleBrandCatalog(
-            brands: $brands,
-            sourceCategoryId: $sourceCategoryId,
+        return new CategoryCatalog(
+            categories: $categories,
+            parentCategoryId: $parentCategoryId,
             discoveredAt: new DateTimeImmutable,
         );
     }
@@ -200,8 +173,8 @@ class SearchParser
 
         if (isset($data['aspectRatio']) && is_array($data['aspectRatio'])) {
             $aspectRatio = new PictureAspectRatio(
-                width: $data['aspectRatio']['width'] ?? null,
-                height: $data['aspectRatio']['height'] ?? null,
+                width: (int) ($data['aspectRatio']['width'] ?? 0),
+                height: (int) ($data['aspectRatio']['height'] ?? 0),
             );
         }
 
@@ -261,13 +234,13 @@ class SearchParser
 
     /**
      * @param  list<array<string, mixed>>  $items
-     * @return SearchCategoryOption[]
+     * @return Category[]
      */
     private function parseSearchCategoryOptions(array $items): array
     {
         return array_map(
             /** @param array<string, mixed> $item */
-            fn (array $item): SearchCategoryOption => SearchCategoryOption::fromArray(['id' => (int) ($item['id'] ?? 0)] + $item),
+            fn (array $item): Category => Category::fromArray(['id' => (int) ($item['id'] ?? 0)] + $item),
             $items,
         );
     }

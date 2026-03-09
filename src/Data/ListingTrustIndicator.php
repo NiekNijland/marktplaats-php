@@ -7,13 +7,13 @@ namespace NiekNijland\Marktplaats\Data;
 readonly class ListingTrustIndicator
 {
     public function __construct(
-        public ?string $key,
+        public string $key,
         public ?string $label,
         public ?string $value,
     ) {}
 
     /**
-     * @return array{key: ?string, label: ?string, value: ?string}
+     * @return array{key: string, label: ?string, value: ?string}
      */
     public function toArray(): array
     {
@@ -25,12 +25,12 @@ readonly class ListingTrustIndicator
     }
 
     /**
-     * @param  array{key?: ?string, label?: ?string, value?: ?string}  $data
+     * @param  array{key?: string, label?: ?string, value?: ?string}  $data
      */
     public static function fromArray(array $data): self
     {
         return new self(
-            key: $data['key'] ?? null,
+            key: $data['key'] ?? '',
             label: $data['label'] ?? null,
             value: $data['value'] ?? null,
         );

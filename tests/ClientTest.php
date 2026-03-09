@@ -9,8 +9,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use NiekNijland\Marktplaats\Client;
-use NiekNijland\Marktplaats\Data\MotorcycleBrand;
-use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
+use NiekNijland\Marktplaats\Data\Category;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use PHPUnit\Framework\TestCase;
@@ -151,38 +150,41 @@ class ClientTest extends TestCase
         $this->assertSame(0, $mock->count());
     }
 
-    public function test_motorcycle_search_strict_mode_filters_non_bike_categories(): void
+    public function test_search_excluded_categories_filters_listings(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $query = new MotorcycleSearchQuery(strictMode: true);
-        $result = $client->getMotorcycleSearch($query);
+        $query = new SearchQuery(
+            l1CategoryId: 678,
+            excludedCategoryIds: [723, 724],
+        );
+        $result = $client->getSearch($query);
 
         // Original fixture has 3 listings: categoryId 696, 710, 723
-        // Category 723 is in STRICT_MODE_EXCLUDED_CATEGORIES
+        // Category 723 is excluded by query
         $this->assertCount(2, $result->listings);
 
         foreach ($result->listings as $listing) {
-            $this->assertNotContains(
-                $listing->categoryId,
-                MotorcycleSearchQuery::STRICT_MODE_EXCLUDED_CATEGORIES,
-            );
+            $this->assertNotContains($listing->categoryId, [723, 724]);
         }
     }
 
-    public function test_motorcycle_search_non_strict_returns_all(): void
+    public function test_search_without_exclusions_returns_all(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $query = new MotorcycleSearchQuery(strictMode: false);
-        $result = $client->getMotorcycleSearch($query);
+        $query = new SearchQuery(l1CategoryId: 678);
+        $result = $client->getSearch($query);
 
         $this->assertCount(3, $result->listings);
     }
 
-    public function test_motorcycle_search_preserves_original_total_count(): void
+    public function test_search_excluded_categories_preserves_original_total_count(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $query = new MotorcycleSearchQuery(strictMode: true);
-        $result = $client->getMotorcycleSearch($query);
+        $query = new SearchQuery(
+            l1CategoryId: 678,
+            excludedCategoryIds: [723, 724],
+        );
+        $result = $client->getSearch($query);
 
         // totalResultCount is the original API count, not the filtered count
         $this->assertSame(3, $result->totalResultCount);
@@ -204,6 +206,86 @@ class ClientTest extends TestCase
         $this->assertSame('m2100000001', $listings[0]->itemId);
     }
 
+    public function test_get_search_all_applies_excluded_categories(): void
+    {
+        $client = $this->createClientWithFixture('search-motorcycles.json');
+        $query = new SearchQuery(
+            l1CategoryId: 678,
+            excludedCategoryIds: [723],
+        );
+
+        $listings = iterator_to_array($client->getSearchAll($query));
+
+        $this->assertCount(2, $listings);
+    }
+
+    public function test_get_search_all_continues_after_fully_excluded_page(): void
+    {
+        $page1 = json_encode([
+            'listings' => [
+                ['itemId' => 'm-ex-1', 'title' => 'Excluded 1', 'categoryId' => 723],
+                ['itemId' => 'm-ex-2', 'title' => 'Excluded 2', 'categoryId' => 723],
+            ],
+            'totalResultCount' => 2,
+            'maxAllowedPageNumber' => 2,
+        ], JSON_THROW_ON_ERROR);
+
+        $page2 = json_encode([
+            'listings' => [
+                ['itemId' => 'm-ok-1', 'title' => 'Allowed', 'categoryId' => 710],
+            ],
+            'totalResultCount' => 2,
+            'maxAllowedPageNumber' => 2,
+        ], JSON_THROW_ON_ERROR);
+
+        $mock = new MockHandler([
+            new Response(200, [], $page1),
+            new Response(200, [], $page2),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $query = new SearchQuery(
+            l1CategoryId: 678,
+            excludedCategoryIds: [723],
+        );
+
+        $listings = iterator_to_array($client->getSearchAll($query));
+
+        $this->assertCount(1, $listings);
+        $this->assertSame('m-ok-1', $listings[0]->itemId);
+    }
+
+    public function test_search_excluded_categories_keeps_null_category_listing(): void
+    {
+        $payload = json_encode([
+            'listings' => [
+                ['itemId' => 'm-null-cat', 'title' => 'Unknown Category', 'categoryId' => null],
+                ['itemId' => 'm-excluded', 'title' => 'Excluded', 'categoryId' => 723],
+            ],
+            'totalResultCount' => 2,
+            'maxAllowedPageNumber' => 1,
+        ], JSON_THROW_ON_ERROR);
+
+        $mock = new MockHandler([
+            new Response(200, [], $payload),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $result = $client->getSearch(new SearchQuery(
+            l1CategoryId: 678,
+            excludedCategoryIds: [723],
+        ));
+
+        $this->assertCount(1, $result->listings);
+        $this->assertSame('m-null-cat', $result->listings[0]->itemId);
+    }
+
     public function test_get_search_all_stops_on_empty_listings(): void
     {
         $mock = new MockHandler([
@@ -223,20 +305,20 @@ class ClientTest extends TestCase
         $this->assertSame([], $listings);
     }
 
-    public function test_brand_catalog_discovery(): void
+    public function test_category_catalog_discovery(): void
     {
         $client = $this->createClientWithFixture('search-motorcycle-brand-catalog.json');
-        $catalog = $client->getMotorcycleBrandCatalog();
+        $catalog = $client->getCategoryCatalog(678);
 
-        $this->assertSame(678, $catalog->sourceCategoryId);
-        $this->assertNotEmpty($catalog->brands);
+        $this->assertSame(678, $catalog->parentCategoryId);
+        $this->assertNotEmpty($catalog->categories);
 
-        $brandNames = array_map(fn (MotorcycleBrand $b): string => $b->name, $catalog->brands);
-        $this->assertContains('Honda', $brandNames);
-        $this->assertNotContains('Oldtimers', $brandNames);
+        $categoryNames = array_map(fn (Category $c): ?string => $c->name, $catalog->categories);
+        $this->assertContains('Honda', $categoryNames);
+        $this->assertContains('Oldtimers', $categoryNames);
     }
 
-    public function test_brand_catalog_cached(): void
+    public function test_category_catalog_cached(): void
     {
         $fixture = $this->loadFixture('search-motorcycle-brand-catalog.json');
         $mock = new MockHandler([
@@ -249,25 +331,21 @@ class ClientTest extends TestCase
             cache: $cache,
         );
 
-        $catalog1 = $client->getMotorcycleBrandCatalog();
-        $catalog2 = $client->getMotorcycleBrandCatalog();
+        $catalog1 = $client->getCategoryCatalog(678);
+        $catalog2 = $client->getCategoryCatalog(678);
 
-        $this->assertSame(count($catalog1->brands), count($catalog2->brands));
+        $this->assertSame(count($catalog1->categories), count($catalog2->categories));
     }
 
-    public function test_motorcycle_query_with_brand(): void
+    public function test_search_query_with_l1_and_l2_category(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles-honda.json');
 
-        $brand = new MotorcycleBrand(
-            categoryId: 696,
-            key: 'honda',
-            name: 'Honda',
-            fullName: 'Motoren | Honda',
-            parentCategoryId: 678,
+        $query = new SearchQuery(
+            l1CategoryId: 678,
+            l2CategoryId: 696,
         );
 
-        $query = new MotorcycleSearchQuery(brand: $brand);
         $result = $client->getSearch($query);
 
         $this->assertNotEmpty($result->listings);

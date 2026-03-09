@@ -6,11 +6,11 @@ namespace NiekNijland\Marktplaats\Tests\Testing;
 
 use NiekNijland\Marktplaats\Data\Enums\PriceType;
 use NiekNijland\Marktplaats\Data\ListingDetail;
+use NiekNijland\Marktplaats\Testing\CategoryCatalogFactory;
+use NiekNijland\Marktplaats\Testing\CategoryFactory;
 use NiekNijland\Marktplaats\Testing\ListingDetailFactory;
 use NiekNijland\Marktplaats\Testing\ListingFactory;
 use NiekNijland\Marktplaats\Testing\LocationFactory;
-use NiekNijland\Marktplaats\Testing\MotorcycleBrandCatalogFactory;
-use NiekNijland\Marktplaats\Testing\MotorcycleBrandFactory;
 use NiekNijland\Marktplaats\Testing\PriceInfoFactory;
 use NiekNijland\Marktplaats\Testing\SearchResultFactory;
 use NiekNijland\Marktplaats\Testing\SellerInformationFactory;
@@ -71,21 +71,21 @@ class FactoryTest extends TestCase
         $this->assertSame('Test Seller', $seller->sellerName);
     }
 
-    public function test_motorcycle_brand_factory(): void
+    public function test_category_factory(): void
     {
-        $brand = MotorcycleBrandFactory::make();
+        $category = CategoryFactory::make();
 
-        $this->assertSame(696, $brand->categoryId);
-        $this->assertSame('Honda', $brand->name);
-        $this->assertSame(678, $brand->parentCategoryId);
+        $this->assertSame(696, $category->id);
+        $this->assertSame('Honda', $category->name);
+        $this->assertSame(678, $category->parentId);
     }
 
-    public function test_motorcycle_brand_catalog_factory(): void
+    public function test_category_catalog_factory(): void
     {
-        $catalog = MotorcycleBrandCatalogFactory::make();
+        $catalog = CategoryCatalogFactory::make();
 
-        $this->assertSame(678, $catalog->sourceCategoryId);
-        $this->assertCount(3, $catalog->brands);
+        $this->assertSame(678, $catalog->parentCategoryId);
+        $this->assertCount(3, $catalog->categories);
     }
 
     public function test_search_result_factory(): void

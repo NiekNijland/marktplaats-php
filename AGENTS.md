@@ -82,8 +82,8 @@ namespace NiekNijland\Marktplaats\...;
 | Element | Convention | Examples |
 |---------|-----------|----------|
 | Classes | PascalCase | `SearchResult`, `ListingFactory` |
-| Public methods | `get*` prefix | `getSearch()`, `getMotorcycleBrandCatalog()` |
-| Private methods | Verb prefix | `fetchRawResponse()`, `parseListing()`, `applyStrictMotorcycleFilter()` |
+| Public methods | `get*` prefix | `getSearch()`, `getCategoryCatalog()` |
+| Private methods | Verb prefix | `fetchRawResponse()`, `parseListing()`, `applyExcludedCategoryFilter()` |
 | Static factories | `make()`, `fromArray()`, `empty()` | `ListingFactory::make()`, `Listing::fromArray()` |
 | Properties | camelCase | `$cacheTtl`, `$totalResultCount` |
 | Constants | UPPER_SNAKE_CASE, typed | `private const string BASE_URL` |
@@ -141,8 +141,8 @@ readonly class ExampleDto
 
 ## Key Decisions
 
-- Brand category IDs are **never hardcoded** — discovered live via `getMotorcycleBrandCatalog()`
+- Category IDs are **never hardcoded** — discovered live via `getCategoryCatalog()`
 - `fullUrl` is derived by the parser from `vipUrl` at parse time, not a computed property
 - `getSearchAll()` bypasses cache (fetches live) to avoid stale pagination
-- Motorcycle strict mode is client-side post-fetch filtering (API doesn't support exclusions)
+- Category exclusions are client-side post-fetch filtering (API doesn't support exclusions)
 - `toArray()`/`fromArray()` symmetry is required on all DTOs for cache serialization

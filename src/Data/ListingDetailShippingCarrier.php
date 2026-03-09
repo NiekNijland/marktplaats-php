@@ -10,7 +10,7 @@ readonly class ListingDetailShippingCarrier
      * @param  list<ListingDetailShippingLabel>  $labels
      */
     public function __construct(
-        public ?string $carrierId = null,
+        public string $carrierId,
         public array $labels = [],
     ) {}
 
@@ -31,7 +31,7 @@ readonly class ListingDetailShippingCarrier
     public static function fromArray(array $data): self
     {
         return new self(
-            carrierId: $data['carrierId'] ?? null,
+            carrierId: $data['carrierId'] ?? '',
             labels: array_values(array_map(
                 fn (array $label): ListingDetailShippingLabel => ListingDetailShippingLabel::fromArray($label),
                 $data['labels'] ?? [],

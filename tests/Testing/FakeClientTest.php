@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Tests\Testing;
 
-use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Exception\ClientException;
+use NiekNijland\Marktplaats\Testing\CategoryCatalogFactory;
 use NiekNijland\Marktplaats\Testing\FakeClient;
 use NiekNijland\Marktplaats\Testing\ListingDetailFactory;
 use NiekNijland\Marktplaats\Testing\ListingFactory;
-use NiekNijland\Marktplaats\Testing\MotorcycleBrandCatalogFactory;
 use NiekNijland\Marktplaats\Testing\SearchResultFactory;
 use PHPUnit\Framework\TestCase;
 
@@ -81,38 +80,59 @@ class FakeClientTest extends TestCase
         $fake->assertCalledTimes('getSearch', 2);
     }
 
-    public function test_fake_motorcycle_search(): void
+    public function test_fake_search_with_excluded_categories(): void
     {
-        $seeded = SearchResultFactory::make(totalResultCount: 10);
+        $seeded = SearchResultFactory::make(
+            totalResultCount: 10,
+            listings: ListingFactory::makeMany(3, ['categoryId' => 723]),
+        );
         $fake = new FakeClient;
         $fake->seedSearchResult($seeded);
 
-        $result = $fake->getMotorcycleSearch(new MotorcycleSearchQuery);
+        $result = $fake->getSearch(new SearchQuery(excludedCategoryIds: [723]));
 
         $this->assertSame(10, $result->totalResultCount);
-        $fake->assertCalled('getMotorcycleSearch');
+        $this->assertSame([], $result->listings);
+        $fake->assertCalled('getSearch');
     }
 
-    public function test_fake_brand_catalog(): void
+    public function test_fake_search_with_excluded_categories_keeps_null_category(): void
     {
-        $catalog = MotorcycleBrandCatalogFactory::make();
+        $seeded = SearchResultFactory::make(
+            listings: [
+                ListingFactory::make(['itemId' => 'm-null', 'categoryId' => null]),
+                ListingFactory::make(['itemId' => 'm-excluded', 'categoryId' => 723]),
+            ],
+        );
         $fake = new FakeClient;
-        $fake->seedBrandCatalog($catalog);
+        $fake->seedSearchResult($seeded);
 
-        $result = $fake->getMotorcycleBrandCatalog();
+        $result = $fake->getSearch(new SearchQuery(excludedCategoryIds: [723]));
 
-        $this->assertSame(678, $result->sourceCategoryId);
-        $this->assertNotEmpty($result->brands);
+        $this->assertCount(1, $result->listings);
+        $this->assertSame('m-null', $result->listings[0]->itemId);
     }
 
-    public function test_fake_brand_catalog_throws_when_not_seeded(): void
+    public function test_fake_category_catalog(): void
+    {
+        $catalog = CategoryCatalogFactory::make();
+        $fake = new FakeClient;
+        $fake->seedCategoryCatalog($catalog);
+
+        $result = $fake->getCategoryCatalog(678);
+
+        $this->assertSame(678, $result->parentCategoryId);
+        $this->assertNotEmpty($result->categories);
+    }
+
+    public function test_fake_category_catalog_throws_when_not_seeded(): void
     {
         $fake = new FakeClient;
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage('No brand catalog seeded');
+        $this->expectExceptionMessage('No category catalog seeded');
 
-        $fake->getMotorcycleBrandCatalog();
+        $fake->getCategoryCatalog(678);
     }
 
     public function test_fake_get_search_all(): void

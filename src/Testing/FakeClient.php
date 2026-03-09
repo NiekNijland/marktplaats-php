@@ -6,10 +6,9 @@ namespace NiekNijland\Marktplaats\Testing;
 
 use Generator;
 use NiekNijland\Marktplaats\ClientInterface;
+use NiekNijland\Marktplaats\Data\CategoryCatalog;
 use NiekNijland\Marktplaats\Data\Listing;
 use NiekNijland\Marktplaats\Data\ListingDetail;
-use NiekNijland\Marktplaats\Data\MotorcycleBrandCatalog;
-use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Exception\ClientException;
@@ -26,7 +25,7 @@ class FakeClient implements ClientInterface
     /** @var ListingDetail[] */
     private array $listingDetails = [];
 
-    private ?MotorcycleBrandCatalog $brandCatalog = null;
+    private ?CategoryCatalog $categoryCatalog = null;
 
     private ?ClientException $exception = null;
 
@@ -44,9 +43,9 @@ class FakeClient implements ClientInterface
         return $this;
     }
 
-    public function seedBrandCatalog(MotorcycleBrandCatalog $catalog): self
+    public function seedCategoryCatalog(CategoryCatalog $catalog): self
     {
-        $this->brandCatalog = $catalog;
+        $this->categoryCatalog = $catalog;
 
         return $this;
     }
@@ -66,7 +65,9 @@ class FakeClient implements ClientInterface
             throw $this->exception;
         }
 
-        return array_shift($this->searchResults) ?? SearchResult::empty();
+        $result = array_shift($this->searchResults) ?? SearchResult::empty();
+
+        return $this->applyExcludedCategoryFilter($result, $query->excludedCategoryIds);
     }
 
     /**
@@ -81,30 +82,41 @@ class FakeClient implements ClientInterface
         }
 
         $result = array_shift($this->searchResults) ?? SearchResult::empty();
+        $result = $this->applyExcludedCategoryFilter($result, $query->excludedCategoryIds);
 
         foreach ($result->listings as $index => $listing) {
             yield $index => $listing;
         }
     }
 
-    public function getMotorcycleSearch(MotorcycleSearchQuery $query): SearchResult
+    public function getCategoryCatalog(int $l1CategoryId): CategoryCatalog
     {
-        $this->recordedCalls[] = new RecordedCall('getMotorcycleSearch', [$query]);
+        $this->recordedCalls[] = new RecordedCall('getCategoryCatalog', [$l1CategoryId]);
 
         if ($this->exception instanceof ClientException) {
             throw $this->exception;
         }
 
-        $result = array_shift($this->searchResults) ?? SearchResult::empty();
+        if (! $this->categoryCatalog instanceof CategoryCatalog) {
+            throw new ClientException('No category catalog seeded in FakeClient');
+        }
 
-        if (! $query->strictMode) {
+        return $this->categoryCatalog;
+    }
+
+    /**
+     * @param  list<int>  $excludedCategoryIds
+     */
+    private function applyExcludedCategoryFilter(SearchResult $result, array $excludedCategoryIds): SearchResult
+    {
+        if ($excludedCategoryIds === []) {
             return $result;
         }
 
         $filtered = array_values(array_filter(
             $result->listings,
-            fn (Listing $listing): bool => $listing->categoryId !== null
-                && ! in_array($listing->categoryId, MotorcycleSearchQuery::STRICT_MODE_EXCLUDED_CATEGORIES, true),
+            fn (Listing $listing): bool => $listing->categoryId === null
+                || ! in_array($listing->categoryId, $excludedCategoryIds, true),
         ));
 
         return new SearchResult(
@@ -121,21 +133,6 @@ class FakeClient implements ClientInterface
             searchRequest: $result->searchRequest,
             metaTags: $result->metaTags,
         );
-    }
-
-    public function getMotorcycleBrandCatalog(): MotorcycleBrandCatalog
-    {
-        $this->recordedCalls[] = new RecordedCall('getMotorcycleBrandCatalog', []);
-
-        if ($this->exception instanceof ClientException) {
-            throw $this->exception;
-        }
-
-        if (! $this->brandCatalog instanceof MotorcycleBrandCatalog) {
-            throw new ClientException('No brand catalog seeded in FakeClient');
-        }
-
-        return $this->brandCatalog;
     }
 
     public function getListing(string $url): ListingDetail

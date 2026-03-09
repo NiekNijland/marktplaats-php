@@ -9,8 +9,6 @@ use NiekNijland\Marktplaats\Data\AttributeRange;
 use NiekNijland\Marktplaats\Data\Enums\SortBy;
 use NiekNijland\Marktplaats\Data\Enums\SortOrder;
 use NiekNijland\Marktplaats\Data\Enums\ViewOptionKind;
-use NiekNijland\Marktplaats\Data\MotorcycleBrand;
-use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use PHPUnit\Framework\TestCase;
@@ -117,6 +115,14 @@ class SearchQueryTest extends TestCase
         $this->assertNotSame($query1->buildCacheKey(), $query2->buildCacheKey());
     }
 
+    public function test_cache_key_ignores_excluded_category_ids(): void
+    {
+        $query1 = new SearchQuery(l1CategoryId: 678, excludedCategoryIds: [723]);
+        $query2 = new SearchQuery(l1CategoryId: 678, excludedCategoryIds: [724]);
+
+        $this->assertSame($query1->buildCacheKey(), $query2->buildCacheKey());
+    }
+
     public function test_cache_key_starts_with_prefix(): void
     {
         $query = new SearchQuery;
@@ -125,59 +131,33 @@ class SearchQueryTest extends TestCase
         $this->assertStringStartsWith('marktplaats:search:', $key);
     }
 
-    public function test_motorcycle_query_defaults(): void
+    public function test_query_with_excluded_category_ids(): void
     {
-        $query = new MotorcycleSearchQuery;
+        $query = new SearchQuery(excludedCategoryIds: [723, 724]);
 
-        $this->assertSame(678, $query->l1CategoryId);
-        $this->assertNull($query->l2CategoryId);
-        $this->assertSame(100, $query->limit);
-        $this->assertTrue($query->strictMode);
-        $this->assertNull($query->brand);
+        $this->assertSame([723, 724], $query->excludedCategoryIds);
     }
 
-    public function test_motorcycle_query_with_brand(): void
+    public function test_query_excluded_category_ids_not_in_url(): void
     {
-        $brand = new MotorcycleBrand(
-            categoryId: 696,
-            key: 'honda',
-            name: 'Honda',
-            fullName: 'Motoren | Honda',
-            parentCategoryId: 678,
-        );
+        $query = new SearchQuery(excludedCategoryIds: [723, 724]);
+        $url = $query->buildUrl();
 
-        $query = new MotorcycleSearchQuery(brand: $brand);
-
-        $this->assertSame(678, $query->l1CategoryId);
-        $this->assertSame(696, $query->l2CategoryId);
-        $this->assertSame($brand, $query->brand);
+        $this->assertStringNotContainsString('excludedCategoryIds', $url);
     }
 
-    public function test_motorcycle_query_with_offset(): void
+    public function test_query_with_offset_preserves_excluded_category_ids(): void
     {
-        $brand = new MotorcycleBrand(
-            categoryId: 696,
-            key: 'honda',
-            name: 'Honda',
-            fullName: 'Motoren | Honda',
-            parentCategoryId: 678,
+        $original = new SearchQuery(
+            l1CategoryId: 678,
+            excludedCategoryIds: [723, 724],
         );
 
-        $original = new MotorcycleSearchQuery(brand: $brand, strictMode: false);
         $modified = $original->withOffset(100);
 
         $this->assertSame(0, $original->offset);
         $this->assertSame(100, $modified->offset);
-        $this->assertSame($brand, $modified->brand);
-        $this->assertFalse($modified->strictMode);
-    }
-
-    public function test_motorcycle_query_url_includes_motorcycle_category(): void
-    {
-        $query = new MotorcycleSearchQuery;
-        $url = $query->buildUrl();
-
-        $this->assertStringContainsString('l1CategoryId=678', $url);
+        $this->assertSame([723, 724], $modified->excludedCategoryIds);
     }
 
     public function test_custom_sort_options(): void
@@ -374,11 +354,13 @@ class SearchQueryTest extends TestCase
         $this->assertSame('offeredSince', $modified->attributesByKey[0]->key);
     }
 
-    public function test_motorcycle_with_offset_preserves_filter_params(): void
+    public function test_with_offset_preserves_filter_params_and_exclusions(): void
     {
-        $original = new MotorcycleSearchQuery(
+        $original = new SearchQuery(
             query: 'sv 650',
+            l1CategoryId: 678,
             postcode: '7721AL',
+            excludedCategoryIds: [723, 724],
             attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
             attributesById: [98],
             attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],
@@ -389,10 +371,10 @@ class SearchQueryTest extends TestCase
         $this->assertSame(30, $modified->offset);
         $this->assertSame('sv 650', $modified->query);
         $this->assertSame('7721AL', $modified->postcode);
+        $this->assertSame([723, 724], $modified->excludedCategoryIds);
         $this->assertCount(1, $modified->attributeRanges);
         $this->assertSame([98], $modified->attributesById);
         $this->assertCount(1, $modified->attributesByKey);
-        $this->assertTrue($modified->strictMode);
     }
 
     public function test_attribute_range_to_array_and_from_array(): void

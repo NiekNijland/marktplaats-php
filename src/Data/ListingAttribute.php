@@ -10,13 +10,13 @@ readonly class ListingAttribute
      * @param  string[]  $values
      */
     public function __construct(
-        public ?string $key,
+        public string $key,
         public ?string $value,
         public array $values,
     ) {}
 
     /**
-     * @return array{key: ?string, value: ?string, values: string[]}
+     * @return array{key: string, value: ?string, values: string[]}
      */
     public function toArray(): array
     {
@@ -28,12 +28,12 @@ readonly class ListingAttribute
     }
 
     /**
-     * @param  array{key?: ?string, value?: ?string, values?: string[]}  $data
+     * @param  array{key?: string, value?: ?string, values?: string[]}  $data
      */
     public static function fromArray(array $data): self
     {
         return new self(
-            key: $data['key'] ?? null,
+            key: $data['key'] ?? '',
             value: $data['value'] ?? null,
             values: $data['values'] ?? [],
         );

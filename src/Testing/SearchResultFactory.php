@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Testing;
 
+use NiekNijland\Marktplaats\Data\Category;
 use NiekNijland\Marktplaats\Data\Listing;
-use NiekNijland\Marktplaats\Data\SearchCategoryOption;
 use NiekNijland\Marktplaats\Data\SearchFacet;
 use NiekNijland\Marktplaats\Data\SearchMetaTags;
 use NiekNijland\Marktplaats\Data\SearchRequest;
@@ -19,7 +19,7 @@ class SearchResultFactory
      * @param  Listing[]|null  $topBlock
      * @param  SearchFacet[]|null  $facets
      * @param  SortOption[]|null  $sortOptions
-     * @param  SearchCategoryOption[]|null  $searchCategoryOptions
+     * @param  Category[]|null  $searchCategoryOptions
      */
     public static function make(
         ?array $listings = null,

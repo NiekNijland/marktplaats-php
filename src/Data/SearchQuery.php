@@ -9,7 +9,6 @@ use NiekNijland\Marktplaats\Data\Enums\SortOrder;
 use NiekNijland\Marktplaats\Data\Enums\ViewOptionKind;
 use NiekNijland\Marktplaats\Exception\ClientException;
 
-/** @phpstan-consistent-constructor */
 readonly class SearchQuery
 {
     private const string BASE_URL = 'https://www.marktplaats.nl/lrp/api/search';
@@ -18,11 +17,13 @@ readonly class SearchQuery
      * @param  list<AttributeRange>  $attributeRanges
      * @param  list<int>  $attributesById
      * @param  list<AttributeByKey>  $attributesByKey
+     * @param  list<int>  $excludedCategoryIds
      */
     public function __construct(
         public ?string $query = null,
         public ?int $l1CategoryId = null,
         public ?int $l2CategoryId = null,
+        public array $excludedCategoryIds = [],
         public int $limit = 100,
         public int $offset = 0,
         public SortBy $sortBy = SortBy::SORT_INDEX,
@@ -37,12 +38,13 @@ readonly class SearchQuery
         $this->validate();
     }
 
-    public function withOffset(int $offset): static
+    public function withOffset(int $offset): self
     {
-        return new static(
+        return new self(
             query: $this->query,
             l1CategoryId: $this->l1CategoryId,
             l2CategoryId: $this->l2CategoryId,
+            excludedCategoryIds: $this->excludedCategoryIds,
             limit: $this->limit,
             offset: $offset,
             sortBy: $this->sortBy,
@@ -158,7 +160,7 @@ readonly class SearchQuery
         return 'marktplaats:search:'.sha1(http_build_query($normalized));
     }
 
-    protected function validate(): void
+    private function validate(): void
     {
         if ($this->limit < 1) {
             throw new ClientException('Search limit must be at least 1, got '.$this->limit);

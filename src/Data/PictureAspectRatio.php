@@ -7,12 +7,12 @@ namespace NiekNijland\Marktplaats\Data;
 readonly class PictureAspectRatio
 {
     public function __construct(
-        public ?int $width,
-        public ?int $height,
+        public int $width,
+        public int $height,
     ) {}
 
     /**
-     * @return array{width: ?int, height: ?int}
+     * @return array{width: int, height: int}
      */
     public function toArray(): array
     {
@@ -23,13 +23,13 @@ readonly class PictureAspectRatio
     }
 
     /**
-     * @param  array{width?: ?int, height?: ?int}  $data
+     * @param  array{width?: int, height?: int}  $data
      */
     public static function fromArray(array $data): self
     {
         return new self(
-            width: $data['width'] ?? null,
-            height: $data['height'] ?? null,
+            width: (int) ($data['width'] ?? 0),
+            height: (int) ($data['height'] ?? 0),
         );
     }
 }

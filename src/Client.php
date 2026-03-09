@@ -8,10 +8,9 @@ use Generator;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\Request;
 use JsonException;
+use NiekNijland\Marktplaats\Data\CategoryCatalog;
 use NiekNijland\Marktplaats\Data\Listing;
 use NiekNijland\Marktplaats\Data\ListingDetail;
-use NiekNijland\Marktplaats\Data\MotorcycleBrandCatalog;
-use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Exception\ClientException;
@@ -44,14 +43,14 @@ class Client implements ClientInterface
         $cacheKey = $query->buildCacheKey();
 
         if (($cached = $this->fetchFromCache($cacheKey)) instanceof SearchResult) {
-            return $cached;
+            return $this->applyExcludedCategoryFilter($cached, $query->excludedCategoryIds);
         }
 
         $result = $this->fetchSearchResult($query);
 
         $this->storeInCache($cacheKey, $result);
 
-        return $result;
+        return $this->applyExcludedCategoryFilter($result, $query->excludedCategoryIds);
     }
 
     /**
@@ -82,6 +81,8 @@ class Client implements ClientInterface
                 break;
             }
 
+            $filteredResult = $this->applyExcludedCategoryFilter($result, $currentQuery->excludedCategoryIds);
+
             $currentItemIds = array_map(fn (Listing $l): string => $l->itemId, $result->listings);
 
             if ($currentItemIds === $previousItemIds) {
@@ -90,7 +91,7 @@ class Client implements ClientInterface
 
             $previousItemIds = $currentItemIds;
 
-            foreach ($result->listings as $listing) {
+            foreach ($filteredResult->listings as $listing) {
                 yield $yieldedCount => $listing;
                 $yieldedCount++;
             }
@@ -109,27 +110,16 @@ class Client implements ClientInterface
         }
     }
 
-    public function getMotorcycleSearch(MotorcycleSearchQuery $query): SearchResult
+    public function getCategoryCatalog(int $l1CategoryId): CategoryCatalog
     {
-        $result = $this->getSearch($query);
+        $cacheKey = 'marktplaats:categories:'.$l1CategoryId;
 
-        if (! $query->strictMode) {
-            return $result;
-        }
-
-        return $this->applyStrictMotorcycleFilter($result);
-    }
-
-    public function getMotorcycleBrandCatalog(): MotorcycleBrandCatalog
-    {
-        $cacheKey = 'marktplaats:brands:'.MotorcycleSearchQuery::MOTORCYCLE_ROOT_CATEGORY;
-
-        if (($cached = $this->fetchBrandCatalogFromCache($cacheKey)) instanceof MotorcycleBrandCatalog) {
+        if (($cached = $this->fetchCategoryCatalogFromCache($cacheKey)) instanceof CategoryCatalog) {
             return $cached;
         }
 
         $discoveryQuery = new SearchQuery(
-            l1CategoryId: MotorcycleSearchQuery::MOTORCYCLE_ROOT_CATEGORY,
+            l1CategoryId: $l1CategoryId,
             limit: 1,
         );
 
@@ -140,15 +130,15 @@ class Client implements ClientInterface
             /** @var array<string, mixed> $data */
             $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw new ClientException('Failed to decode brand catalog response: '.$e->getMessage(), 0, $e);
+            throw new ClientException('Failed to decode category catalog response: '.$e->getMessage(), 0, $e);
         }
 
-        $catalog = $this->searchParser->parseMotorcycleBrandCatalog(
+        $catalog = $this->searchParser->parseCategoryCatalog(
             $data,
-            MotorcycleSearchQuery::MOTORCYCLE_ROOT_CATEGORY,
+            $l1CategoryId,
         );
 
-        $this->storeBrandCatalogInCache($cacheKey, $catalog);
+        $this->storeCategoryCatalogInCache($cacheKey, $catalog);
 
         return $catalog;
     }
@@ -238,12 +228,19 @@ class Client implements ClientInterface
         return (string) $response->getBody();
     }
 
-    private function applyStrictMotorcycleFilter(SearchResult $result): SearchResult
+    /**
+     * @param  list<int>  $excludedCategoryIds
+     */
+    private function applyExcludedCategoryFilter(SearchResult $result, array $excludedCategoryIds): SearchResult
     {
+        if ($excludedCategoryIds === []) {
+            return $result;
+        }
+
         $filtered = array_values(array_filter(
             $result->listings,
-            fn (Listing $listing): bool => $listing->categoryId !== null
-                && ! in_array($listing->categoryId, MotorcycleSearchQuery::STRICT_MODE_EXCLUDED_CATEGORIES, true),
+            fn (Listing $listing): bool => $listing->categoryId === null
+                || ! in_array($listing->categoryId, $excludedCategoryIds, true),
         ));
 
         return new SearchResult(
@@ -295,7 +292,7 @@ class Client implements ClientInterface
         }
     }
 
-    private function fetchBrandCatalogFromCache(string $key): ?MotorcycleBrandCatalog
+    private function fetchCategoryCatalogFromCache(string $key): ?CategoryCatalog
     {
         if (! $this->cache instanceof CacheInterface) {
             return null;
@@ -312,10 +309,10 @@ class Client implements ClientInterface
             return null;
         }
 
-        return MotorcycleBrandCatalog::fromArray($cached);
+        return CategoryCatalog::fromArray($cached);
     }
 
-    private function storeBrandCatalogInCache(string $key, MotorcycleBrandCatalog $catalog): void
+    private function storeCategoryCatalogInCache(string $key, CategoryCatalog $catalog): void
     {
         if (! $this->cache instanceof CacheInterface) {
             return;

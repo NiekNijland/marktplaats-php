@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NiekNijland\Marktplaats\Tests\Integration;
 
 use NiekNijland\Marktplaats\Client;
+use NiekNijland\Marktplaats\Data\MotorcycleBrand;
 use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use PHPUnit\Framework\TestCase;
@@ -52,7 +53,7 @@ class IntegrationTest extends TestCase
         $this->assertSame(678, $catalog->sourceCategoryId);
         $this->assertNotEmpty($catalog->brands);
 
-        $brandNames = array_map(fn ($b) => $b->name, $catalog->brands);
+        $brandNames = array_map(fn (MotorcycleBrand $b): string => $b->name, $catalog->brands);
         $this->assertContains('Honda', $brandNames);
         $this->assertContains('Yamaha', $brandNames);
     }

@@ -23,7 +23,7 @@ readonly class MotorcycleBrandCatalog
     public function toArray(): array
     {
         return [
-            'brands' => array_map(fn (MotorcycleBrand $b) => $b->toArray(), $this->brands),
+            'brands' => array_map(fn (MotorcycleBrand $b): array => $b->toArray(), $this->brands),
             'sourceCategoryId' => $this->sourceCategoryId,
             'discoveredAt' => $this->discoveredAt->format('c'),
         ];
@@ -36,7 +36,7 @@ readonly class MotorcycleBrandCatalog
     {
         return new self(
             brands: array_map(
-                fn (array $b) => MotorcycleBrand::fromArray($b),
+                fn (array $b): MotorcycleBrand => MotorcycleBrand::fromArray($b),
                 $data['brands'] ?? [],
             ),
             sourceCategoryId: $data['sourceCategoryId'] ?? 678,

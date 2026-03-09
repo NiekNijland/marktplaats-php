@@ -231,7 +231,7 @@ class ClientTest extends TestCase
         $this->assertSame(678, $catalog->sourceCategoryId);
         $this->assertNotEmpty($catalog->brands);
 
-        $brandNames = array_map(fn ($b) => $b->name, $catalog->brands);
+        $brandNames = array_map(fn (MotorcycleBrand $b): string => $b->name, $catalog->brands);
         $this->assertContains('Honda', $brandNames);
         $this->assertNotContains('Oldtimers', $brandNames);
     }

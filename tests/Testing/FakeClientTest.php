@@ -8,6 +8,7 @@ use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Testing\FakeClient;
+use NiekNijland\Marktplaats\Testing\ListingFactory;
 use NiekNijland\Marktplaats\Testing\MotorcycleBrandCatalogFactory;
 use NiekNijland\Marktplaats\Testing\SearchResultFactory;
 use PHPUnit\Framework\TestCase;
@@ -116,7 +117,7 @@ class FakeClientTest extends TestCase
     public function test_fake_get_search_all(): void
     {
         $seeded = SearchResultFactory::make(
-            listings: \NiekNijland\Marktplaats\Testing\ListingFactory::makeMany(3),
+            listings: ListingFactory::makeMany(3),
         );
         $fake = new FakeClient;
         $fake->seedSearchResult($seeded);

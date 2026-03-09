@@ -128,7 +128,7 @@ class SearchParser
      */
     private function parseListings(array $items): array
     {
-        return array_map(fn (array $item) => $this->parseListing($item), $items);
+        return array_map(fn (array $item): Listing => $this->parseListing($item), $items);
     }
 
     /**
@@ -155,16 +155,16 @@ class SearchParser
             location: isset($item['location']) ? Location::fromArray($item['location']) : null,
             imageUrls: $item['imageUrls'] ?? [],
             pictures: array_map(
-                fn (array $p) => $this->parsePicture($p),
+                fn (array $p): ListingPicture => $this->parsePicture($p),
                 $item['pictures'] ?? [],
             ),
             sellerInformation: isset($item['sellerInformation']) ? SellerInformation::fromArray($item['sellerInformation']) : null,
             attributes: array_map(
-                fn (array $a) => ListingAttribute::fromArray($a),
+                fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
                 $item['attributes'] ?? [],
             ),
             extendedAttributes: array_map(
-                fn (array $a) => ListingAttribute::fromArray($a),
+                fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
                 $item['extendedAttributes'] ?? [],
             ),
             traits: $item['traits'] ?? [],
@@ -181,11 +181,11 @@ class SearchParser
             pageLocation: $item['pageLocation'] ?? null,
             opvalStickerText: $item['opvalStickerText'] ?? null,
             highlights: array_map(
-                fn (array $h) => ListingHighlight::fromArray($h),
+                fn (array $h): ListingHighlight => ListingHighlight::fromArray($h),
                 $item['highlights'] ?? [],
             ),
             trustIndicators: array_map(
-                fn (array $t) => ListingTrustIndicator::fromArray($t),
+                fn (array $t): ListingTrustIndicator => ListingTrustIndicator::fromArray($t),
                 $item['trustIndicators'] ?? [],
             ),
         );
@@ -224,7 +224,7 @@ class SearchParser
      */
     private function parseFacets(array $items): array
     {
-        return array_map(fn (array $item) => $this->parseFacet($item), $items);
+        return array_map(fn (array $item): SearchFacet => $this->parseFacet($item), $items);
     }
 
     /**
@@ -240,11 +240,11 @@ class SearchParser
             singleSelect: $item['singleSelect'] ?? null,
             categoryId: $item['categoryId'] ?? null,
             categories: array_map(
-                fn (array $c) => SearchFacetCategory::fromArray($c),
+                fn (array $c): SearchFacetCategory => SearchFacetCategory::fromArray($c),
                 $item['categories'] ?? [],
             ),
             attributeGroup: array_map(
-                fn (array $o) => SearchFacetAttributeGroupOption::fromArray($o),
+                fn (array $o): SearchFacetAttributeGroupOption => SearchFacetAttributeGroupOption::fromArray($o),
                 $item['attributeGroup'] ?? [],
             ),
         );
@@ -256,7 +256,7 @@ class SearchParser
      */
     private function parseSortOptions(array $items): array
     {
-        return array_map(fn (array $item) => SortOption::fromArray($item), $items);
+        return array_map(fn (array $item): SortOption => SortOption::fromArray($item), $items);
     }
 
     /**
@@ -267,7 +267,7 @@ class SearchParser
     {
         return array_map(
             /** @param array<string, mixed> $item */
-            fn (array $item) => SearchCategoryOption::fromArray(['id' => (int) ($item['id'] ?? 0)] + $item),
+            fn (array $item): SearchCategoryOption => SearchCategoryOption::fromArray(['id' => (int) ($item['id'] ?? 0)] + $item),
             $items,
         );
     }

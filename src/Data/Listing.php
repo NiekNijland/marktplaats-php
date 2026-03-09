@@ -64,10 +64,10 @@ readonly class Listing
             'priceInfo' => $this->priceInfo?->toArray(),
             'location' => $this->location?->toArray(),
             'imageUrls' => $this->imageUrls,
-            'pictures' => array_map(fn (ListingPicture $p) => $p->toArray(), $this->pictures),
+            'pictures' => array_map(fn (ListingPicture $p): array => $p->toArray(), $this->pictures),
             'sellerInformation' => $this->sellerInformation?->toArray(),
-            'attributes' => array_map(fn (ListingAttribute $a) => $a->toArray(), $this->attributes),
-            'extendedAttributes' => array_map(fn (ListingAttribute $a) => $a->toArray(), $this->extendedAttributes),
+            'attributes' => array_map(fn (ListingAttribute $a): array => $a->toArray(), $this->attributes),
+            'extendedAttributes' => array_map(fn (ListingAttribute $a): array => $a->toArray(), $this->extendedAttributes),
             'traits' => $this->traits,
             'verticals' => $this->verticals,
             'date' => $this->date,
@@ -81,8 +81,8 @@ readonly class Listing
             'trackingData' => $this->trackingData,
             'pageLocation' => $this->pageLocation,
             'opvalStickerText' => $this->opvalStickerText,
-            'highlights' => array_map(fn (ListingHighlight $h) => $h->toArray(), $this->highlights),
-            'trustIndicators' => array_map(fn (ListingTrustIndicator $t) => $t->toArray(), $this->trustIndicators),
+            'highlights' => array_map(fn (ListingHighlight $h): array => $h->toArray(), $this->highlights),
+            'trustIndicators' => array_map(fn (ListingTrustIndicator $t): array => $t->toArray(), $this->trustIndicators),
         ];
     }
 
@@ -103,16 +103,16 @@ readonly class Listing
             location: isset($data['location']) ? Location::fromArray($data['location']) : null,
             imageUrls: $data['imageUrls'] ?? [],
             pictures: array_map(
-                fn (array $p) => ListingPicture::fromArray($p),
+                fn (array $p): ListingPicture => ListingPicture::fromArray($p),
                 $data['pictures'] ?? [],
             ),
             sellerInformation: isset($data['sellerInformation']) ? SellerInformation::fromArray($data['sellerInformation']) : null,
             attributes: array_map(
-                fn (array $a) => ListingAttribute::fromArray($a),
+                fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
                 $data['attributes'] ?? [],
             ),
             extendedAttributes: array_map(
-                fn (array $a) => ListingAttribute::fromArray($a),
+                fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
                 $data['extendedAttributes'] ?? [],
             ),
             traits: $data['traits'] ?? [],
@@ -129,11 +129,11 @@ readonly class Listing
             pageLocation: $data['pageLocation'] ?? null,
             opvalStickerText: $data['opvalStickerText'] ?? null,
             highlights: array_map(
-                fn (array $h) => ListingHighlight::fromArray($h),
+                fn (array $h): ListingHighlight => ListingHighlight::fromArray($h),
                 $data['highlights'] ?? [],
             ),
             trustIndicators: array_map(
-                fn (array $t) => ListingTrustIndicator::fromArray($t),
+                fn (array $t): ListingTrustIndicator => ListingTrustIndicator::fromArray($t),
                 $data['trustIndicators'] ?? [],
             ),
         );

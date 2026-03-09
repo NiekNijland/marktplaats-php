@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NiekNijland\Marktplaats\Tests;
 
 use NiekNijland\Marktplaats\Data\Enums\PriceType;
+use NiekNijland\Marktplaats\Data\MotorcycleBrand;
+use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Parser\SearchParser;
 use PHPUnit\Framework\TestCase;
@@ -221,7 +223,7 @@ class ParserTest extends TestCase
         $catalog = $this->parser->parseMotorcycleBrandCatalog($data);
 
         // Should include real brands, exclude non-brands
-        $brandNames = array_map(fn ($b) => $b->name, $catalog->brands);
+        $brandNames = array_map(fn (MotorcycleBrand $b): string => $b->name, $catalog->brands);
 
         $this->assertContains('Honda', $brandNames);
         $this->assertContains('BMW', $brandNames);
@@ -261,7 +263,7 @@ class ParserTest extends TestCase
         $original = $this->parser->parseJson($json);
 
         $array = $original->toArray();
-        $restored = \NiekNijland\Marktplaats\Data\SearchResult::fromArray($array);
+        $restored = SearchResult::fromArray($array);
 
         $this->assertSame($original->totalResultCount, $restored->totalResultCount);
         $this->assertSame($original->correlationId, $restored->correlationId);

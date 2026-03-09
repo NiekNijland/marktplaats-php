@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Tests;
 
+use DateInterval;
 use Psr\SimpleCache\CacheInterface;
 
 /**
@@ -19,7 +20,7 @@ class ArrayCache implements CacheInterface
         return $this->store[$key] ?? $default;
     }
 
-    public function set(string $key, mixed $value, null|int|\DateInterval $ttl = null): bool
+    public function set(string $key, mixed $value, null|int|DateInterval $ttl = null): bool
     {
         $this->store[$key] = $value;
 
@@ -51,7 +52,7 @@ class ArrayCache implements CacheInterface
         return $result;
     }
 
-    public function setMultiple(iterable $values, null|int|\DateInterval $ttl = null): bool
+    public function setMultiple(iterable $values, null|int|DateInterval $ttl = null): bool
     {
         foreach ($values as $key => $value) {
             $this->set($key, $value, $ttl);

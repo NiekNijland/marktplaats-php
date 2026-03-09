@@ -51,7 +51,7 @@ class FakeClient implements ClientInterface
     {
         $this->recordedCalls[] = new RecordedCall('getSearch', [$query]);
 
-        if ($this->exception !== null) {
+        if ($this->exception instanceof ClientException) {
             throw $this->exception;
         }
 
@@ -65,7 +65,7 @@ class FakeClient implements ClientInterface
     {
         $this->recordedCalls[] = new RecordedCall('getSearchAll', [$query]);
 
-        if ($this->exception !== null) {
+        if ($this->exception instanceof ClientException) {
             throw $this->exception;
         }
 
@@ -80,7 +80,7 @@ class FakeClient implements ClientInterface
     {
         $this->recordedCalls[] = new RecordedCall('getMotorcycleSearch', [$query]);
 
-        if ($this->exception !== null) {
+        if ($this->exception instanceof ClientException) {
             throw $this->exception;
         }
 
@@ -92,7 +92,7 @@ class FakeClient implements ClientInterface
 
         $filtered = array_values(array_filter(
             $result->listings,
-            fn (Listing $listing) => $listing->categoryId !== null
+            fn (Listing $listing): bool => $listing->categoryId !== null
                 && ! in_array($listing->categoryId, MotorcycleSearchQuery::STRICT_MODE_EXCLUDED_CATEGORIES, true),
         ));
 
@@ -116,11 +116,11 @@ class FakeClient implements ClientInterface
     {
         $this->recordedCalls[] = new RecordedCall('getMotorcycleBrandCatalog', []);
 
-        if ($this->exception !== null) {
+        if ($this->exception instanceof ClientException) {
             throw $this->exception;
         }
 
-        if ($this->brandCatalog === null) {
+        if (! $this->brandCatalog instanceof MotorcycleBrandCatalog) {
             throw new ClientException('No brand catalog seeded in FakeClient');
         }
 
@@ -144,7 +144,7 @@ class FakeClient implements ClientInterface
     {
         $calls = array_filter(
             $this->recordedCalls,
-            fn (RecordedCall $call) => $call->method === $method,
+            fn (RecordedCall $call): bool => $call->method === $method,
         );
 
         Assert::assertNotEmpty($calls, "Expected method [{$method}] to have been called, but it was not.");
@@ -154,7 +154,7 @@ class FakeClient implements ClientInterface
     {
         $calls = array_filter(
             $this->recordedCalls,
-            fn (RecordedCall $call) => $call->method === $method,
+            fn (RecordedCall $call): bool => $call->method === $method,
         );
 
         Assert::assertEmpty($calls, "Expected method [{$method}] to not have been called, but it was.");
@@ -164,7 +164,7 @@ class FakeClient implements ClientInterface
     {
         $calls = array_filter(
             $this->recordedCalls,
-            fn (RecordedCall $call) => $call->method === $method,
+            fn (RecordedCall $call): bool => $call->method === $method,
         );
 
         $actual = count($calls);

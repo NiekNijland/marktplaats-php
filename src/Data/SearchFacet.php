@@ -33,8 +33,8 @@ readonly class SearchFacet
             'label' => $this->label,
             'singleSelect' => $this->singleSelect,
             'categoryId' => $this->categoryId,
-            'categories' => array_map(fn (SearchFacetCategory $c) => $c->toArray(), $this->categories),
-            'attributeGroup' => array_map(fn (SearchFacetAttributeGroupOption $o) => $o->toArray(), $this->attributeGroup),
+            'categories' => array_map(fn (SearchFacetCategory $c): array => $c->toArray(), $this->categories),
+            'attributeGroup' => array_map(fn (SearchFacetAttributeGroupOption $o): array => $o->toArray(), $this->attributeGroup),
         ];
     }
 
@@ -51,11 +51,11 @@ readonly class SearchFacet
             singleSelect: $data['singleSelect'] ?? null,
             categoryId: $data['categoryId'] ?? null,
             categories: array_map(
-                fn (array $c) => SearchFacetCategory::fromArray($c),
+                fn (array $c): SearchFacetCategory => SearchFacetCategory::fromArray($c),
                 $data['categories'] ?? [],
             ),
             attributeGroup: array_map(
-                fn (array $o) => SearchFacetAttributeGroupOption::fromArray($o),
+                fn (array $o): SearchFacetAttributeGroupOption => SearchFacetAttributeGroupOption::fromArray($o),
                 $data['attributeGroup'] ?? [],
             ),
         );

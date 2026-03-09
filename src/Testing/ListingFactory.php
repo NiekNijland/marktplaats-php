@@ -54,6 +54,6 @@ class ListingFactory
      */
     public static function makeMany(int $count, array $overrides = []): array
     {
-        return array_map(fn () => self::make($overrides), range(1, $count));
+        return array_map(fn (): Listing => self::make($overrides), range(1, $count));
     }
 }

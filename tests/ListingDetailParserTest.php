@@ -110,6 +110,7 @@ class ListingDetailParserTest extends TestCase
 
         $this->assertNotNull($detail->bidsInfo);
         $this->assertTrue($detail->bidsInfo->isBiddingEnabled);
+        $this->assertFalse($detail->bidsInfo->isRemovingBidEnabled);
         $this->assertSame(500000, $detail->bidsInfo->currentMinimumBidCents);
         $this->assertCount(2, $detail->bidsInfo->bids);
 
@@ -127,13 +128,18 @@ class ListingDetailParserTest extends TestCase
 
         $this->assertCount(2, $detail->images);
         $this->assertSame('9c4f50d7-d72a-4fb4-82a8-2916e40b8de7', $detail->images[0]->mediaId);
+        $this->assertStringStartsWith('https://', $detail->images[0]->getResolvedBaseUrl() ?? '');
         $this->assertSame(828, $detail->images[0]->originalWidth);
         $this->assertSame(615, $detail->images[0]->originalHeight);
         $this->assertNotNull($detail->images[0]->aspectRatio);
         $this->assertSame(276, $detail->images[0]->aspectRatio->width);
 
         $this->assertCount(2, $detail->imageUrls);
+        $this->assertStringStartsWith('https://', $detail->imageUrls[0]);
         $this->assertStringContainsString('221432d0', $detail->imageUrls[0]);
+        $this->assertSame(['XL' => '84', 'M' => '82'], $detail->imageSizes);
+        $this->assertSame('Yamaha MT-07 ABS', $detail->galleryAlt);
+        $this->assertStringContainsString('rule=$_84.jpg', $detail->getImageUrl(0, 'XL') ?? '');
     }
 
     public function test_parse_html_extracts_shipping(): void
@@ -185,6 +191,8 @@ class ListingDetailParserTest extends TestCase
         $this->assertFalse($detail->buyersProtectionAllowed);
         $this->assertFalse($detail->thinContent);
         $this->assertTrue($detail->isAutomotiveAd);
+        $this->assertFalse($detail->isFreeAd);
+        $this->assertTrue($detail->shippable);
     }
 
     public function test_parse_html_resolves_full_url_from_relative_path(): void
@@ -245,9 +253,13 @@ class ListingDetailParserTest extends TestCase
         $this->assertSame($detail->stats?->viewCount, $restored->stats?->viewCount);
         $this->assertCount(count($detail->bidsInfo?->bids ?? []), $restored->bidsInfo?->bids ?? []);
         $this->assertCount(count($detail->images), $restored->images);
+        $this->assertSame($detail->imageSizes, $restored->imageSizes);
+        $this->assertSame($detail->galleryAlt, $restored->galleryAlt);
         $this->assertCount(count($detail->attributes), $restored->attributes);
         $this->assertSame($detail->traits, $restored->traits);
         $this->assertSame($detail->buyItNowEnabled, $restored->buyItNowEnabled);
+        $this->assertSame($detail->isFreeAd, $restored->isFreeAd);
+        $this->assertSame($detail->shippable, $restored->shippable);
     }
 
     public function test_extract_description_returns_null_on_missing(): void

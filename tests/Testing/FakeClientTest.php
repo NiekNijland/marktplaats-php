@@ -8,6 +8,7 @@ use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Testing\CategoryCatalogFactory;
 use NiekNijland\Marktplaats\Testing\FakeClient;
+use NiekNijland\Marktplaats\Testing\FilterCatalogFactory;
 use NiekNijland\Marktplaats\Testing\ListingDetailFactory;
 use NiekNijland\Marktplaats\Testing\ListingFactory;
 use NiekNijland\Marktplaats\Testing\SearchResultFactory;
@@ -133,6 +134,29 @@ class FakeClientTest extends TestCase
         $this->expectExceptionMessage('No category catalog seeded');
 
         $fake->getCategoryCatalog(678);
+    }
+
+    public function test_fake_filter_catalog(): void
+    {
+        $catalog = FilterCatalogFactory::make();
+        $fake = new FakeClient;
+        $fake->seedFilterCatalog($catalog);
+
+        $result = $fake->getFilterCatalog(678);
+
+        $this->assertSame(678, $result->l1CategoryId);
+        $this->assertNotEmpty($result->facets);
+        $fake->assertCalled('getFilterCatalog');
+    }
+
+    public function test_fake_filter_catalog_throws_when_not_seeded(): void
+    {
+        $fake = new FakeClient;
+
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('No filter catalog seeded');
+
+        $fake->getFilterCatalog(678);
     }
 
     public function test_fake_get_search_all(): void

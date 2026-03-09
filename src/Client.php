@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats;
 
+use DateTimeImmutable;
 use Generator;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\Request;
 use JsonException;
 use NiekNijland\Marktplaats\Data\CategoryCatalog;
+use NiekNijland\Marktplaats\Data\FilterCatalog;
 use NiekNijland\Marktplaats\Data\Listing;
 use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\SearchQuery;
@@ -139,6 +141,34 @@ class Client implements ClientInterface
         );
 
         $this->storeCategoryCatalogInCache($cacheKey, $catalog);
+
+        return $catalog;
+    }
+
+    public function getFilterCatalog(int $l1CategoryId, ?int $l2CategoryId = null): FilterCatalog
+    {
+        $cacheKey = 'marktplaats:filters:'.$l1CategoryId.':'.($l2CategoryId ?? 'all');
+
+        if (($cached = $this->fetchFilterCatalogFromCache($cacheKey)) instanceof FilterCatalog) {
+            return $cached;
+        }
+
+        $discoveryQuery = new SearchQuery(
+            l1CategoryId: $l1CategoryId,
+            l2CategoryId: $l2CategoryId,
+            limit: 1,
+        );
+
+        $result = $this->fetchSearchResult($discoveryQuery);
+
+        $catalog = new FilterCatalog(
+            facets: array_values($result->facets),
+            l1CategoryId: $l1CategoryId,
+            l2CategoryId: $l2CategoryId,
+            discoveredAt: new DateTimeImmutable,
+        );
+
+        $this->storeFilterCatalogInCache($cacheKey, $catalog);
 
         return $catalog;
     }
@@ -313,6 +343,39 @@ class Client implements ClientInterface
     }
 
     private function storeCategoryCatalogInCache(string $key, CategoryCatalog $catalog): void
+    {
+        if (! $this->cache instanceof CacheInterface) {
+            return;
+        }
+
+        try {
+            $this->cache->set($key, $catalog->toArray(), $this->cacheTtl);
+        } catch (InvalidArgumentException) {
+            // Silently ignore cache write failures.
+        }
+    }
+
+    private function fetchFilterCatalogFromCache(string $key): ?FilterCatalog
+    {
+        if (! $this->cache instanceof CacheInterface) {
+            return null;
+        }
+
+        try {
+            /** @var array<string, mixed>|null $cached */
+            $cached = $this->cache->get($key);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
+
+        if (! is_array($cached)) {
+            return null;
+        }
+
+        return FilterCatalog::fromArray($cached);
+    }
+
+    private function storeFilterCatalogInCache(string $key, FilterCatalog $catalog): void
     {
         if (! $this->cache instanceof CacheInterface) {
             return;

@@ -60,4 +60,13 @@ class IntegrationTest extends TestCase
         $this->assertContains('Honda', $categoryNames);
         $this->assertContains('Yamaha', $categoryNames);
     }
+
+    public function test_live_filter_catalog_discovery(): void
+    {
+        $client = new Client;
+        $catalog = $client->getFilterCatalog(678);
+
+        $this->assertSame(678, $catalog->l1CategoryId);
+        $this->assertNotEmpty($catalog->facets);
+    }
 }

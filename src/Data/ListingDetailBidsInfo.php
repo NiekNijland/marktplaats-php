@@ -11,6 +11,7 @@ readonly class ListingDetailBidsInfo
      */
     public function __construct(
         public bool $isBiddingEnabled = false,
+        public bool $isRemovingBidEnabled = false,
         public ?int $currentMinimumBidCents = null,
         public array $bids = [],
     ) {}
@@ -22,6 +23,7 @@ readonly class ListingDetailBidsInfo
     {
         return [
             'isBiddingEnabled' => $this->isBiddingEnabled,
+            'isRemovingBidEnabled' => $this->isRemovingBidEnabled,
             'currentMinimumBidCents' => $this->currentMinimumBidCents,
             'bids' => array_map(static fn (ListingDetailBid $bid): array => $bid->toArray(), $this->bids),
         ];
@@ -34,7 +36,10 @@ readonly class ListingDetailBidsInfo
     {
         return new self(
             isBiddingEnabled: (bool) ($data['isBiddingEnabled'] ?? false),
-            currentMinimumBidCents: isset($data['currentMinimumBid']) ? (int) $data['currentMinimumBid'] : null,
+            isRemovingBidEnabled: (bool) ($data['isRemovingBidEnabled'] ?? false),
+            currentMinimumBidCents: isset($data['currentMinimumBid'])
+                ? (int) $data['currentMinimumBid']
+                : (isset($data['currentMinimumBidCents']) ? (int) $data['currentMinimumBidCents'] : null),
             bids: array_values(array_map(
                 static fn (array $bid): ListingDetailBid => ListingDetailBid::fromArray($bid),
                 $data['bids'] ?? [],

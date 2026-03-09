@@ -11,6 +11,8 @@ $client = new Client();
 $result = $client->getSearch(new SearchQuery(
     query: 'honda cbr',
     l1CategoryId: 678,
+    distanceMeters: 25000,
+    offerType: 'offered',
     limit: 25,
 ));
 
@@ -85,6 +87,28 @@ $result = $client->getSearch(new SearchQuery(
 ));
 ```
 
+## Discover Available Filters
+
+Use filter discovery to inspect available range and option filters for a category before building a query:
+
+```php
+use NiekNijland\Marktplaats\Client;
+
+$client = new Client();
+$catalog = $client->getFilterCatalog(678);
+
+foreach ($catalog->getRangeFacets() as $facet) {
+    echo $facet->key . PHP_EOL;
+}
+
+$brandFacet = $catalog->findByKey('brand');
+if ($brandFacet !== null) {
+    foreach ($brandFacet->attributeGroup as $option) {
+        echo $option->attributeValueKey . ': ' . $option->attributeValueLabel . PHP_EOL;
+    }
+}
+```
+
 ## Listing Detail Page
 
 Fetch the full detail page for a single listing, including description, attributes, bid history, and seller information:
@@ -112,6 +136,9 @@ if ($detail->bidsInfo?->isBiddingEnabled) {
         echo $bid->user?->nickname . ' bid ' . $bid->valueCents . ' cents' . PHP_EOL;
     }
 }
+
+// Build a sized image URL from detail data (uses gallery imageSizes)
+echo $detail->getImageUrl(0, 'XL') . PHP_EOL;
 ```
 
 You can also pass a relative `vipUrl` as returned in search result listings:

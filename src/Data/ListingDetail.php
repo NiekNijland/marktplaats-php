@@ -9,6 +9,7 @@ readonly class ListingDetail
     /**
      * @param  list<ListingDetailImage>  $images
      * @param  list<string>  $imageUrls
+     * @param  array<string, string>  $imageSizes
      * @param  list<ListingDetailAttribute>  $attributes
      * @param  list<string>  $traits
      */
@@ -25,14 +26,29 @@ readonly class ListingDetail
         public ?ListingDetailShipping $shipping = null,
         public array $images = [],
         public array $imageUrls = [],
+        public array $imageSizes = [],
+        public ?string $galleryAlt = null,
         public array $attributes = [],
         public array $traits = [],
         public bool $buyItNowEnabled = false,
         public bool $buyersProtectionAllowed = false,
         public bool $thinContent = false,
         public bool $isAutomotiveAd = false,
+        public bool $isFreeAd = false,
+        public bool $shippable = false,
         public string $fullUrl = '',
     ) {}
+
+    public function getImageUrl(int $index, string $size = 'XL'): ?string
+    {
+        $image = $this->images[$index] ?? null;
+
+        if (! $image instanceof ListingDetailImage) {
+            return null;
+        }
+
+        return $image->getUrlForSize($size, $this->imageSizes);
+    }
 
     /**
      * @return array<string, mixed>
@@ -52,12 +68,16 @@ readonly class ListingDetail
             'shipping' => $this->shipping?->toArray(),
             'images' => array_map(static fn (ListingDetailImage $i): array => $i->toArray(), $this->images),
             'imageUrls' => $this->imageUrls,
+            'imageSizes' => $this->imageSizes,
+            'galleryAlt' => $this->galleryAlt,
             'attributes' => array_map(static fn (ListingDetailAttribute $a): array => $a->toArray(), $this->attributes),
             'traits' => $this->traits,
             'buyItNowEnabled' => $this->buyItNowEnabled,
             'buyersProtectionAllowed' => $this->buyersProtectionAllowed,
             'thinContent' => $this->thinContent,
             'isAutomotiveAd' => $this->isAutomotiveAd,
+            'isFreeAd' => $this->isFreeAd,
+            'shippable' => $this->shippable,
             'fullUrl' => $this->fullUrl,
         ];
     }
@@ -67,6 +87,20 @@ readonly class ListingDetail
      */
     public static function fromArray(array $data): self
     {
+        $imageSizes = [];
+
+        if (is_array($data['imageSizes'] ?? null)) {
+            foreach ($data['imageSizes'] as $size => $rule) {
+                if (! is_string($size)) {
+                    continue;
+                }
+
+                if (is_string($rule) || is_int($rule)) {
+                    $imageSizes[$size] = (string) $rule;
+                }
+            }
+        }
+
         return new self(
             itemId: $data['itemId'] ?? '',
             title: $data['title'] ?? '',
@@ -83,6 +117,8 @@ readonly class ListingDetail
                 $data['images'] ?? [],
             )),
             imageUrls: $data['imageUrls'] ?? [],
+            imageSizes: $imageSizes,
+            galleryAlt: $data['galleryAlt'] ?? null,
             attributes: array_values(array_map(
                 static fn (array $a): ListingDetailAttribute => ListingDetailAttribute::fromArray($a),
                 $data['attributes'] ?? [],
@@ -92,6 +128,8 @@ readonly class ListingDetail
             buyersProtectionAllowed: (bool) ($data['buyersProtectionAllowed'] ?? false),
             thinContent: (bool) ($data['thinContent'] ?? false),
             isAutomotiveAd: (bool) ($data['isAutomotiveAd'] ?? false),
+            isFreeAd: (bool) ($data['isFreeAd'] ?? false),
+            shippable: (bool) ($data['shippable'] ?? false),
             fullUrl: $data['fullUrl'] ?? '',
         );
     }

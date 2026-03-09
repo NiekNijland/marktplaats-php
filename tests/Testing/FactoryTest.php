@@ -8,6 +8,7 @@ use NiekNijland\Marktplaats\Data\Enums\PriceType;
 use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Testing\CategoryCatalogFactory;
 use NiekNijland\Marktplaats\Testing\CategoryFactory;
+use NiekNijland\Marktplaats\Testing\FilterCatalogFactory;
 use NiekNijland\Marktplaats\Testing\ListingDetailFactory;
 use NiekNijland\Marktplaats\Testing\ListingFactory;
 use NiekNijland\Marktplaats\Testing\LocationFactory;
@@ -104,6 +105,15 @@ class FactoryTest extends TestCase
         $this->assertCount(3, $result->listings);
     }
 
+    public function test_filter_catalog_factory(): void
+    {
+        $catalog = FilterCatalogFactory::make();
+
+        $this->assertSame(678, $catalog->l1CategoryId);
+        $this->assertNotEmpty($catalog->getRangeFacets());
+        $this->assertNotEmpty($catalog->getGroupFacets());
+    }
+
     public function test_listing_detail_factory_creates_valid_detail(): void
     {
         $detail = ListingDetailFactory::make();
@@ -120,6 +130,8 @@ class FactoryTest extends TestCase
         $this->assertSame(696, $detail->category->id);
         $this->assertNotNull($detail->stats);
         $this->assertSame(150, $detail->stats->viewCount);
+        $this->assertSame(['XL' => '84', 'M' => '82'], $detail->imageSizes);
+        $this->assertSame('Test gallery alt', $detail->galleryAlt);
     }
 
     public function test_listing_detail_factory_accepts_overrides(): void
@@ -150,5 +162,7 @@ class FactoryTest extends TestCase
         $this->assertSame($original->title, $restored->title);
         $this->assertSame($original->description, $restored->description);
         $this->assertSame($original->fullUrl, $restored->fullUrl);
+        $this->assertSame($original->galleryAlt, $restored->galleryAlt);
+        $this->assertSame($original->imageSizes, $restored->imageSizes);
     }
 }

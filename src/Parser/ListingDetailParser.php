@@ -46,6 +46,8 @@ class ListingDetailParser
         $gallery = $data['gallery'] ?? [];
         $images = $this->parseImages($gallery);
         $imageUrls = $this->parseImageUrls($gallery);
+        $imageSizes = $this->parseImageSizes($gallery);
+        $flags = $data['flags'] ?? [];
 
         return new ListingDetail(
             itemId: (string) ($data['itemId'] ?? ''),
@@ -60,12 +62,16 @@ class ListingDetailParser
             shipping: isset($data['shippingInformation']) ? ListingDetailShipping::fromArray($data['shippingInformation']) : null,
             images: $images,
             imageUrls: $imageUrls,
+            imageSizes: $imageSizes,
+            galleryAlt: isset($gallery['alt']) ? (string) $gallery['alt'] : null,
             attributes: $attributes,
             traits: $data['traits'] ?? [],
             buyItNowEnabled: (bool) ($data['buyItNowEnabled'] ?? false),
             buyersProtectionAllowed: (bool) ($data['buyersProtectionAllowed'] ?? false),
             thinContent: (bool) ($data['thinContent'] ?? false),
             isAutomotiveAd: (bool) ($data['isAutomotiveAd'] ?? false),
+            isFreeAd: (bool) ($data['isFreeAd'] ?? false),
+            shippable: (bool) ($flags['shippable'] ?? false),
             fullUrl: $fullUrl,
         );
     }
@@ -159,7 +165,60 @@ class ListingDetailParser
      */
     private function parseImageUrls(array $gallery): array
     {
-        return array_values($gallery['imageUrls'] ?? []);
+        $rawImageUrls = $gallery['imageUrls'] ?? [];
+
+        if (! is_array($rawImageUrls)) {
+            return [];
+        }
+
+        $imageUrls = [];
+
+        foreach ($rawImageUrls as $url) {
+            if (! is_string($url)) {
+                continue;
+            }
+
+            $imageUrls[] = $this->resolveProtocolRelativeUrl($url);
+        }
+
+        return $imageUrls;
+    }
+
+    /**
+     * @param  array<string, mixed>  $gallery
+     * @return array<string, string>
+     */
+    private function parseImageSizes(array $gallery): array
+    {
+        $media = $gallery['media'] ?? [];
+        $rawImageSizes = $media['imageSizes'] ?? [];
+
+        if (! is_array($rawImageSizes)) {
+            return [];
+        }
+
+        $imageSizes = [];
+
+        foreach ($rawImageSizes as $size => $rule) {
+            if (! is_string($size)) {
+                continue;
+            }
+
+            if (is_string($rule) || is_int($rule)) {
+                $imageSizes[$size] = (string) $rule;
+            }
+        }
+
+        return $imageSizes;
+    }
+
+    private function resolveProtocolRelativeUrl(string $url): string
+    {
+        if (str_starts_with($url, '//')) {
+            return 'https:'.$url;
+        }
+
+        return $url;
     }
 
     private function resolveFullUrl(string $url): string

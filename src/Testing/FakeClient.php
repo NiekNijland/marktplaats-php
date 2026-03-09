@@ -7,6 +7,7 @@ namespace NiekNijland\Marktplaats\Testing;
 use Generator;
 use NiekNijland\Marktplaats\ClientInterface;
 use NiekNijland\Marktplaats\Data\CategoryCatalog;
+use NiekNijland\Marktplaats\Data\FilterCatalog;
 use NiekNijland\Marktplaats\Data\Listing;
 use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\SearchQuery;
@@ -27,6 +28,8 @@ class FakeClient implements ClientInterface
 
     private ?CategoryCatalog $categoryCatalog = null;
 
+    private ?FilterCatalog $filterCatalog = null;
+
     private ?ClientException $exception = null;
 
     public function seedSearchResult(SearchResult $result): self
@@ -46,6 +49,13 @@ class FakeClient implements ClientInterface
     public function seedCategoryCatalog(CategoryCatalog $catalog): self
     {
         $this->categoryCatalog = $catalog;
+
+        return $this;
+    }
+
+    public function seedFilterCatalog(FilterCatalog $catalog): self
+    {
+        $this->filterCatalog = $catalog;
 
         return $this;
     }
@@ -102,6 +112,21 @@ class FakeClient implements ClientInterface
         }
 
         return $this->categoryCatalog;
+    }
+
+    public function getFilterCatalog(int $l1CategoryId, ?int $l2CategoryId = null): FilterCatalog
+    {
+        $this->recordedCalls[] = new RecordedCall('getFilterCatalog', [$l1CategoryId, $l2CategoryId]);
+
+        if ($this->exception instanceof ClientException) {
+            throw $this->exception;
+        }
+
+        if (! $this->filterCatalog instanceof FilterCatalog) {
+            throw new ClientException('No filter catalog seeded in FakeClient');
+        }
+
+        return $this->filterCatalog;
     }
 
     /**

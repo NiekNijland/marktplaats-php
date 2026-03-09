@@ -57,6 +57,7 @@ class ListingDetailFactory
             ],
             'bidsInfo' => [
                 'isBiddingEnabled' => false,
+                'isRemovingBidEnabled' => false,
                 'currentMinimumBidCents' => null,
                 'bids' => [],
             ],
@@ -66,6 +67,11 @@ class ListingDetailFactory
             ],
             'images' => [],
             'imageUrls' => [],
+            'imageSizes' => [
+                'XL' => '84',
+                'M' => '82',
+            ],
+            'galleryAlt' => 'Test gallery alt',
             'attributes' => [
                 ['label' => 'Bouwjaar', 'value' => '2020'],
                 ['label' => 'Kilometerstand', 'value' => '15.000 km'],
@@ -75,6 +81,8 @@ class ListingDetailFactory
             'buyersProtectionAllowed' => false,
             'thinContent' => false,
             'isAutomotiveAd' => false,
+            'isFreeAd' => false,
+            'shippable' => false,
             'fullUrl' => 'https://www.marktplaats.nl/v/motoren/honda/m1234567890-test-listing',
         ];
 

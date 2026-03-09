@@ -177,10 +177,34 @@ class SearchQueryTest extends TestCase
 
     public function test_query_with_postcode(): void
     {
-        $query = new SearchQuery(postcode: '7721AL');
+        $query = new SearchQuery(postcode: '1234AB');
         $url = $query->buildUrl();
 
-        $this->assertStringContainsString('postcode=7721AL', $url);
+        $this->assertStringContainsString('postcode=1234AB', $url);
+    }
+
+    public function test_query_with_distance_meters(): void
+    {
+        $query = new SearchQuery(distanceMeters: 10000);
+        $url = $query->buildUrl();
+
+        $this->assertStringContainsString('distanceMeters=10000', $url);
+    }
+
+    public function test_query_with_offer_type(): void
+    {
+        $query = new SearchQuery(offerType: 'offered');
+        $url = $query->buildUrl();
+
+        $this->assertStringContainsString('offerType=offered', $url);
+    }
+
+    public function test_negative_distance_meters_throws(): void
+    {
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('distanceMeters must not be negative');
+
+        new SearchQuery(distanceMeters: -1);
     }
 
     public function test_query_omits_null_postcode(): void
@@ -249,7 +273,9 @@ class SearchQueryTest extends TestCase
             offset: 0,
             searchInTitleAndDescription: true,
             viewOptions: ViewOptionKind::LIST_VIEW,
-            postcode: '7721AL',
+            postcode: '1234AB',
+            distanceMeters: 10000,
+            offerType: 'offered',
             attributeRanges: [
                 new AttributeRange('PriceCents', 50000, 800000),
                 new AttributeRange('constructionYear', 2016, 2024),
@@ -266,7 +292,9 @@ class SearchQueryTest extends TestCase
         $this->assertStringContainsString('l1CategoryId=678', $url);
         $this->assertStringContainsString('l2CategoryId=707', $url);
         $this->assertStringContainsString('limit=30', $url);
-        $this->assertStringContainsString('postcode=7721AL', $url);
+        $this->assertStringContainsString('postcode=1234AB', $url);
+        $this->assertStringContainsString('distanceMeters=10000', $url);
+        $this->assertStringContainsString('offerType=offered', $url);
         $this->assertStringContainsString('attributeRanges%5B%5D=PriceCents%3A50000%3A800000', $url);
         $this->assertStringContainsString('attributesById%5B%5D=98', $url);
         $this->assertStringContainsString('attributesByKey%5B%5D=offeredSince%3AAltijd', $url);
@@ -337,7 +365,9 @@ class SearchQueryTest extends TestCase
     public function test_with_offset_preserves_filter_params(): void
     {
         $original = new SearchQuery(
-            postcode: '7721AL',
+            postcode: '1234AB',
+            distanceMeters: 10000,
+            offerType: 'offered',
             attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
             attributesById: [98],
             attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],
@@ -346,7 +376,9 @@ class SearchQueryTest extends TestCase
         $modified = $original->withOffset(30);
 
         $this->assertSame(30, $modified->offset);
-        $this->assertSame('7721AL', $modified->postcode);
+        $this->assertSame('1234AB', $modified->postcode);
+        $this->assertSame(10000, $modified->distanceMeters);
+        $this->assertSame('offered', $modified->offerType);
         $this->assertCount(1, $modified->attributeRanges);
         $this->assertSame('PriceCents', $modified->attributeRanges[0]->attribute);
         $this->assertSame([98], $modified->attributesById);
@@ -360,7 +392,9 @@ class SearchQueryTest extends TestCase
             query: 'sv 650',
             l1CategoryId: 678,
             excludedCategoryIds: [723, 724],
-            postcode: '7721AL',
+            postcode: '1234AB',
+            distanceMeters: 10000,
+            offerType: 'offered',
             attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
             attributesById: [98],
             attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],
@@ -370,7 +404,9 @@ class SearchQueryTest extends TestCase
 
         $this->assertSame(30, $modified->offset);
         $this->assertSame('sv 650', $modified->query);
-        $this->assertSame('7721AL', $modified->postcode);
+        $this->assertSame('1234AB', $modified->postcode);
+        $this->assertSame(10000, $modified->distanceMeters);
+        $this->assertSame('offered', $modified->offerType);
         $this->assertSame([723, 724], $modified->excludedCategoryIds);
         $this->assertCount(1, $modified->attributeRanges);
         $this->assertSame([98], $modified->attributesById);

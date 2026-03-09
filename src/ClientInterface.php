@@ -6,6 +6,7 @@ namespace NiekNijland\Marktplaats;
 
 use Generator;
 use NiekNijland\Marktplaats\Data\CategoryCatalog;
+use NiekNijland\Marktplaats\Data\FilterCatalog;
 use NiekNijland\Marktplaats\Data\Listing;
 use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\SearchQuery;
@@ -32,6 +33,13 @@ interface ClientInterface
      * @throws ClientException
      */
     public function getCategoryCatalog(int $l1CategoryId): CategoryCatalog;
+
+    /**
+     * Returns available search facets for an L1/L2 category combination.
+     *
+     * @throws ClientException
+     */
+    public function getFilterCatalog(int $l1CategoryId, ?int $l2CategoryId = null): FilterCatalog;
 
     /**
      * Fetches the full detail page for a single listing.

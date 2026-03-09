@@ -337,6 +337,47 @@ class ClientTest extends TestCase
         $this->assertSame(count($catalog1->categories), count($catalog2->categories));
     }
 
+    public function test_filter_catalog_discovery(): void
+    {
+        $client = $this->createClientWithFixture('search-motorcycles.json');
+        $catalog = $client->getFilterCatalog(678);
+
+        $this->assertSame(678, $catalog->l1CategoryId);
+        $this->assertNull($catalog->l2CategoryId);
+        $this->assertNotEmpty($catalog->facets);
+        $this->assertNotEmpty($catalog->getRangeFacets());
+        $this->assertNotEmpty($catalog->getGroupFacets());
+        $this->assertNotNull($catalog->findByKey('brand'));
+    }
+
+    public function test_filter_catalog_cached(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+        ]);
+
+        $cache = new ArrayCache;
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            cache: $cache,
+        );
+
+        $catalog1 = $client->getFilterCatalog(678);
+        $catalog2 = $client->getFilterCatalog(678);
+
+        $this->assertSame(count($catalog1->facets), count($catalog2->facets));
+    }
+
+    public function test_filter_catalog_with_l2_category(): void
+    {
+        $client = $this->createClientWithFixture('search-motorcycles.json');
+        $catalog = $client->getFilterCatalog(678, 696);
+
+        $this->assertSame(678, $catalog->l1CategoryId);
+        $this->assertSame(696, $catalog->l2CategoryId);
+    }
+
     public function test_search_query_with_l1_and_l2_category(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles-honda.json');

@@ -50,6 +50,7 @@ All factories follow the same pattern: `make(array $overrides = [])` and `makeMa
 | `SellerInformationFactory` | `SellerInformation` |
 | `CategoryFactory` | `Category` |
 | `CategoryCatalogFactory` | `CategoryCatalog` |
+| `FilterCatalogFactory` | `FilterCatalog` |
 
 ## Assertions
 

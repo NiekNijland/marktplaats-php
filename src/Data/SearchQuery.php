@@ -31,6 +31,8 @@ readonly class SearchQuery
         public bool $searchInTitleAndDescription = true,
         public ViewOptionKind $viewOptions = ViewOptionKind::GALLERY_VIEW,
         public ?string $postcode = null,
+        public ?int $distanceMeters = null,
+        public ?string $offerType = null,
         public array $attributeRanges = [],
         public array $attributesById = [],
         public array $attributesByKey = [],
@@ -52,6 +54,8 @@ readonly class SearchQuery
             searchInTitleAndDescription: $this->searchInTitleAndDescription,
             viewOptions: $this->viewOptions,
             postcode: $this->postcode,
+            distanceMeters: $this->distanceMeters,
+            offerType: $this->offerType,
             attributeRanges: $this->attributeRanges,
             attributesById: $this->attributesById,
             attributesByKey: $this->attributesByKey,
@@ -86,6 +90,14 @@ readonly class SearchQuery
 
         if ($this->postcode !== null) {
             $params['postcode'] = $this->postcode;
+        }
+
+        if ($this->distanceMeters !== null) {
+            $params['distanceMeters'] = $this->distanceMeters;
+        }
+
+        if ($this->offerType !== null) {
+            $params['offerType'] = $this->offerType;
         }
 
         return $params;
@@ -176,6 +188,10 @@ readonly class SearchQuery
 
         if ($this->l2CategoryId !== null && $this->l1CategoryId === null) {
             throw new ClientException('l2CategoryId requires l1CategoryId to be set');
+        }
+
+        if ($this->distanceMeters !== null && $this->distanceMeters < 0) {
+            throw new ClientException('distanceMeters must not be negative, got '.$this->distanceMeters);
         }
     }
 }

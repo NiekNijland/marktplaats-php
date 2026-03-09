@@ -20,6 +20,11 @@ readonly class MotorcycleSearchQuery extends SearchQuery
      */
     public const array STRICT_MODE_EXCLUDED_CATEGORIES = [723, 724];
 
+    /**
+     * @param  list<AttributeRange>  $attributeRanges
+     * @param  list<int>  $attributesById
+     * @param  list<AttributeByKey>  $attributesByKey
+     */
     public function __construct(
         ?string $query = null,
         public ?MotorcycleBrand $brand = null,
@@ -30,6 +35,10 @@ readonly class MotorcycleSearchQuery extends SearchQuery
         bool $searchInTitleAndDescription = true,
         ViewOptionKind $viewOptions = ViewOptionKind::GALLERY_VIEW,
         public bool $strictMode = true,
+        ?string $postcode = null,
+        array $attributeRanges = [],
+        array $attributesById = [],
+        array $attributesByKey = [],
     ) {
         parent::__construct(
             query: $query,
@@ -41,6 +50,10 @@ readonly class MotorcycleSearchQuery extends SearchQuery
             sortOrder: $sortOrder,
             searchInTitleAndDescription: $searchInTitleAndDescription,
             viewOptions: $viewOptions,
+            postcode: $postcode,
+            attributeRanges: $attributeRanges,
+            attributesById: $attributesById,
+            attributesByKey: $attributesByKey,
         );
     }
 
@@ -56,6 +69,10 @@ readonly class MotorcycleSearchQuery extends SearchQuery
             searchInTitleAndDescription: $this->searchInTitleAndDescription,
             viewOptions: $this->viewOptions,
             strictMode: $this->strictMode,
+            postcode: $this->postcode,
+            attributeRanges: $this->attributeRanges,
+            attributesById: $this->attributesById,
+            attributesByKey: $this->attributesByKey,
         );
     }
 

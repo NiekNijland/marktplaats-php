@@ -8,6 +8,7 @@ use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Testing\FakeClient;
+use NiekNijland\Marktplaats\Testing\ListingDetailFactory;
 use NiekNijland\Marktplaats\Testing\ListingFactory;
 use NiekNijland\Marktplaats\Testing\MotorcycleBrandCatalogFactory;
 use NiekNijland\Marktplaats\Testing\SearchResultFactory;
@@ -145,5 +146,37 @@ class FakeClientTest extends TestCase
         $this->assertSame(1, $fake->getSearch(new SearchQuery)->totalResultCount);
         $this->assertSame(2, $fake->getSearch(new SearchQuery)->totalResultCount);
         $this->assertSame(0, $fake->getSearch(new SearchQuery)->totalResultCount); // exhausted
+    }
+
+    public function test_fake_get_listing(): void
+    {
+        $detail = ListingDetailFactory::make(['title' => 'Seeded Detail']);
+        $fake = new FakeClient;
+        $fake->seedListingDetail($detail);
+
+        $result = $fake->getListing('https://www.marktplaats.nl/v/motoren/honda/m123');
+
+        $this->assertSame('Seeded Detail', $result->title);
+        $fake->assertCalled('getListing');
+    }
+
+    public function test_fake_get_listing_throws_when_not_seeded(): void
+    {
+        $fake = new FakeClient;
+
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('No listing detail seeded');
+
+        $fake->getListing('https://www.marktplaats.nl/v/motoren/honda/m123');
+    }
+
+    public function test_fake_multiple_listing_details_consumed_in_order(): void
+    {
+        $fake = new FakeClient;
+        $fake->seedListingDetail(ListingDetailFactory::make(['title' => 'First']));
+        $fake->seedListingDetail(ListingDetailFactory::make(['title' => 'Second']));
+
+        $this->assertSame('First', $fake->getListing('/v/test/m1')->title);
+        $this->assertSame('Second', $fake->getListing('/v/test/m2')->title);
     }
 }

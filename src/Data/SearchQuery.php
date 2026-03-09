@@ -14,6 +14,11 @@ readonly class SearchQuery
 {
     private const string BASE_URL = 'https://www.marktplaats.nl/lrp/api/search';
 
+    /**
+     * @param  list<AttributeRange>  $attributeRanges
+     * @param  list<int>  $attributesById
+     * @param  list<AttributeByKey>  $attributesByKey
+     */
     public function __construct(
         public ?string $query = null,
         public ?int $l1CategoryId = null,
@@ -24,6 +29,10 @@ readonly class SearchQuery
         public SortOrder $sortOrder = SortOrder::DECREASING,
         public bool $searchInTitleAndDescription = true,
         public ViewOptionKind $viewOptions = ViewOptionKind::GALLERY_VIEW,
+        public ?string $postcode = null,
+        public array $attributeRanges = [],
+        public array $attributesById = [],
+        public array $attributesByKey = [],
     ) {
         $this->validate();
     }
@@ -40,6 +49,10 @@ readonly class SearchQuery
             sortOrder: $this->sortOrder,
             searchInTitleAndDescription: $this->searchInTitleAndDescription,
             viewOptions: $this->viewOptions,
+            postcode: $this->postcode,
+            attributeRanges: $this->attributeRanges,
+            attributesById: $this->attributesById,
+            attributesByKey: $this->attributesByKey,
         );
     }
 
@@ -69,17 +82,72 @@ readonly class SearchQuery
         $params['searchInTitleAndDescription'] = $this->searchInTitleAndDescription ? 'true' : 'false';
         $params['viewOptions'] = $this->viewOptions->value;
 
+        if ($this->postcode !== null) {
+            $params['postcode'] = $this->postcode;
+        }
+
+        return $params;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public function toArrayQueryParams(): array
+    {
+        $params = [];
+
+        if ($this->attributeRanges !== []) {
+            $params['attributeRanges'] = array_map(
+                fn (AttributeRange $range): string => $range->toString(),
+                $this->attributeRanges,
+            );
+        }
+
+        if ($this->attributesById !== []) {
+            $params['attributesById'] = array_map(
+                fn (int $id): string => (string) $id,
+                $this->attributesById,
+            );
+        }
+
+        if ($this->attributesByKey !== []) {
+            $params['attributesByKey'] = array_map(
+                fn (AttributeByKey $attr): string => $attr->toString(),
+                $this->attributesByKey,
+            );
+        }
+
         return $params;
     }
 
     public function buildUrl(): string
     {
-        return self::BASE_URL.'?'.http_build_query($this->toQueryParams());
+        $queryString = http_build_query($this->toQueryParams());
+
+        foreach ($this->toArrayQueryParams() as $key => $values) {
+            $encodedKey = urlencode($key).'%5B%5D';
+
+            foreach ($values as $value) {
+                if ($queryString !== '') {
+                    $queryString .= '&';
+                }
+
+                $queryString .= $encodedKey.'='.urlencode($value);
+            }
+        }
+
+        return self::BASE_URL.'?'.$queryString;
     }
 
     public function buildCacheKey(): string
     {
         $params = $this->toQueryParams();
+
+        foreach ($this->toArrayQueryParams() as $key => $values) {
+            sort($values);
+            $params[$key] = implode(',', $values);
+        }
+
         ksort($params);
 
         $normalized = [];

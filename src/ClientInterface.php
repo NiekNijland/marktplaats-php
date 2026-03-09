@@ -6,6 +6,7 @@ namespace NiekNijland\Marktplaats;
 
 use Generator;
 use NiekNijland\Marktplaats\Data\Listing;
+use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\MotorcycleBrandCatalog;
 use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
@@ -39,6 +40,16 @@ interface ClientInterface
      * @throws ClientException
      */
     public function getMotorcycleBrandCatalog(): MotorcycleBrandCatalog;
+
+    /**
+     * Fetches the full detail page for a single listing.
+     *
+     * Accepts a full URL (https://www.marktplaats.nl/v/...) or a relative
+     * vipUrl path (/v/...) as returned in search result Listing objects.
+     *
+     * @throws ClientException
+     */
+    public function getListing(string $url): ListingDetail;
 
     /**
      * Clears cache/session state held by the client instance.

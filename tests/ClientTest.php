@@ -273,6 +273,81 @@ class ClientTest extends TestCase
         $this->assertNotEmpty($result->listings);
     }
 
+    public function test_get_listing_returns_listing_detail(): void
+    {
+        $html = $this->loadFixture('listing-detail.html');
+        $mock = new MockHandler([
+            new Response(200, [], $html),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $detail = $client->getListing('https://www.marktplaats.nl/v/motoren/honda/m2355451324-test');
+
+        $this->assertSame('Yamaha MT-07 ABS + handvatverwarming', $detail->title);
+        $this->assertSame('m2355451324', $detail->itemId);
+    }
+
+    public function test_get_listing_resolves_relative_url(): void
+    {
+        $html = $this->loadFixture('listing-detail.html');
+        $mock = new MockHandler([
+            new Response(200, [], $html),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $detail = $client->getListing('/v/motoren/honda/m2355451324-test');
+
+        $this->assertNotEmpty($detail->itemId);
+    }
+
+    public function test_get_listing_caches_result(): void
+    {
+        $html = $this->loadFixture('listing-detail.html');
+        $mock = new MockHandler([
+            new Response(200, [], $html),
+        ]);
+
+        $cache = new ArrayCache;
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            cache: $cache,
+        );
+
+        $url = 'https://www.marktplaats.nl/v/motoren/honda/m2355451324-test';
+
+        // First call — fetches from API
+        $detail1 = $client->getListing($url);
+
+        // Second call — should come from cache (mock is exhausted)
+        $detail2 = $client->getListing($url);
+
+        $this->assertSame($detail1->itemId, $detail2->itemId);
+        $this->assertSame($detail1->title, $detail2->title);
+    }
+
+    public function test_get_listing_404_throws(): void
+    {
+        $mock = new MockHandler([
+            new Response(404),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('not found');
+
+        $client->getListing('https://www.marktplaats.nl/v/motoren/nonexistent');
+    }
+
     private function createClientWithFixture(string $fixture): Client
     {
         $json = $this->loadFixture($fixture);

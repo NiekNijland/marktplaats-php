@@ -7,6 +7,7 @@ namespace NiekNijland\Marktplaats\Testing;
 use Generator;
 use NiekNijland\Marktplaats\ClientInterface;
 use NiekNijland\Marktplaats\Data\Listing;
+use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\MotorcycleBrandCatalog;
 use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
@@ -22,6 +23,9 @@ class FakeClient implements ClientInterface
     /** @var SearchResult[] */
     private array $searchResults = [];
 
+    /** @var ListingDetail[] */
+    private array $listingDetails = [];
+
     private ?MotorcycleBrandCatalog $brandCatalog = null;
 
     private ?ClientException $exception = null;
@@ -29,6 +33,13 @@ class FakeClient implements ClientInterface
     public function seedSearchResult(SearchResult $result): self
     {
         $this->searchResults[] = $result;
+
+        return $this;
+    }
+
+    public function seedListingDetail(ListingDetail $detail): self
+    {
+        $this->listingDetails[] = $detail;
 
         return $this;
     }
@@ -125,6 +136,21 @@ class FakeClient implements ClientInterface
         }
 
         return $this->brandCatalog;
+    }
+
+    public function getListing(string $url): ListingDetail
+    {
+        $this->recordedCalls[] = new RecordedCall('getListing', [$url]);
+
+        if ($this->exception instanceof ClientException) {
+            throw $this->exception;
+        }
+
+        if ($this->listingDetails === []) {
+            throw new ClientException('No listing detail seeded in FakeClient');
+        }
+
+        return array_shift($this->listingDetails);
     }
 
     public function resetSession(): void

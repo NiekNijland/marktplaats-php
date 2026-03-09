@@ -9,11 +9,13 @@ use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\Request;
 use JsonException;
 use NiekNijland\Marktplaats\Data\Listing;
+use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\MotorcycleBrandCatalog;
 use NiekNijland\Marktplaats\Data\MotorcycleSearchQuery;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Exception\ClientException;
+use NiekNijland\Marktplaats\Parser\ListingDetailParser;
 use NiekNijland\Marktplaats\Parser\SearchParser;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
@@ -22,14 +24,19 @@ use Psr\SimpleCache\InvalidArgumentException;
 
 class Client implements ClientInterface
 {
-    private SearchParser $parser;
+    private const string BASE_URL = 'https://www.marktplaats.nl';
+
+    private SearchParser $searchParser;
+
+    private ListingDetailParser $listingDetailParser;
 
     public function __construct(
         private readonly HttpClientInterface $httpClient = new GuzzleClient,
         private readonly ?CacheInterface $cache = null,
         private readonly int $cacheTtl = 3600,
     ) {
-        $this->parser = new SearchParser;
+        $this->searchParser = new SearchParser;
+        $this->listingDetailParser = new ListingDetailParser;
     }
 
     public function getSearch(SearchQuery $query): SearchResult
@@ -136,7 +143,7 @@ class Client implements ClientInterface
             throw new ClientException('Failed to decode brand catalog response: '.$e->getMessage(), 0, $e);
         }
 
-        $catalog = $this->parser->parseMotorcycleBrandCatalog(
+        $catalog = $this->searchParser->parseMotorcycleBrandCatalog(
             $data,
             MotorcycleSearchQuery::MOTORCYCLE_ROOT_CATEGORY,
         );
@@ -146,9 +153,39 @@ class Client implements ClientInterface
         return $catalog;
     }
 
+    public function getListing(string $url): ListingDetail
+    {
+        $fullUrl = $this->resolveListingUrl($url);
+        $cacheKey = $this->buildListingDetailCacheKey($fullUrl);
+
+        if (($cached = $this->fetchListingDetailFromCache($cacheKey)) instanceof ListingDetail) {
+            return $cached;
+        }
+
+        $html = $this->fetchRawResponse($fullUrl);
+        $detail = $this->listingDetailParser->parseHtml($html, $fullUrl);
+
+        $this->storeListingDetailInCache($cacheKey, $detail);
+
+        return $detail;
+    }
+
     public function resetSession(): void
     {
         // Reserved for future session/cookie state clearing.
+    }
+
+    private function resolveListingUrl(string $url): string
+    {
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            return $url;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return self::BASE_URL.$url;
+        }
+
+        return self::BASE_URL.'/'.$url;
     }
 
     private function fetchSearchResult(SearchQuery $query): SearchResult
@@ -156,7 +193,7 @@ class Client implements ClientInterface
         $url = $query->buildUrl();
         $body = $this->fetchRawResponse($url);
 
-        return $this->parser->parseJson($body);
+        return $this->searchParser->parseJson($body);
     }
 
     private function fetchRawResponse(string $url): string
@@ -286,6 +323,44 @@ class Client implements ClientInterface
 
         try {
             $this->cache->set($key, $catalog->toArray(), $this->cacheTtl);
+        } catch (InvalidArgumentException) {
+            // Silently ignore cache write failures.
+        }
+    }
+
+    private function buildListingDetailCacheKey(string $url): string
+    {
+        return 'marktplaats:listing:'.md5($url);
+    }
+
+    private function fetchListingDetailFromCache(string $key): ?ListingDetail
+    {
+        if (! $this->cache instanceof CacheInterface) {
+            return null;
+        }
+
+        try {
+            /** @var array<string, mixed>|null $cached */
+            $cached = $this->cache->get($key);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
+
+        if (! is_array($cached)) {
+            return null;
+        }
+
+        return ListingDetail::fromArray($cached);
+    }
+
+    private function storeListingDetailInCache(string $key, ListingDetail $detail): void
+    {
+        if (! $this->cache instanceof CacheInterface) {
+            return;
+        }
+
+        try {
+            $this->cache->set($key, $detail->toArray(), $this->cacheTtl);
         } catch (InvalidArgumentException) {
             // Silently ignore cache write failures.
         }

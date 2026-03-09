@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Tests;
 
+use NiekNijland\Marktplaats\Data\AttributeByKey;
+use NiekNijland\Marktplaats\Data\AttributeRange;
 use NiekNijland\Marktplaats\Data\Enums\SortBy;
 use NiekNijland\Marktplaats\Data\Enums\SortOrder;
 use NiekNijland\Marktplaats\Data\Enums\ViewOptionKind;
@@ -191,5 +193,237 @@ class SearchQueryTest extends TestCase
         $this->assertStringContainsString('sortBy=PRICE', $url);
         $this->assertStringContainsString('sortOrder=INCREASING', $url);
         $this->assertStringContainsString('viewOptions=list-view', $url);
+    }
+
+    public function test_query_with_postcode(): void
+    {
+        $query = new SearchQuery(postcode: '7721AL');
+        $url = $query->buildUrl();
+
+        $this->assertStringContainsString('postcode=7721AL', $url);
+    }
+
+    public function test_query_omits_null_postcode(): void
+    {
+        $query = new SearchQuery;
+        $params = $query->toQueryParams();
+
+        $this->assertArrayNotHasKey('postcode', $params);
+    }
+
+    public function test_query_with_attribute_ranges(): void
+    {
+        $query = new SearchQuery(
+            attributeRanges: [
+                new AttributeRange('PriceCents', 50000, 800000),
+                new AttributeRange('constructionYear', 2016, 2024),
+                new AttributeRange('mileage', 10000, 40000),
+            ],
+        );
+        $url = $query->buildUrl();
+
+        $this->assertStringContainsString('attributeRanges%5B%5D=PriceCents%3A50000%3A800000', $url);
+        $this->assertStringContainsString('attributeRanges%5B%5D=constructionYear%3A2016%3A2024', $url);
+        $this->assertStringContainsString('attributeRanges%5B%5D=mileage%3A10000%3A40000', $url);
+    }
+
+    public function test_query_with_attribute_range_open_ended(): void
+    {
+        $minOnly = new AttributeRange('PriceCents', from: 50000);
+        $maxOnly = new AttributeRange('PriceCents', to: 800000);
+
+        $this->assertSame('PriceCents:50000:', $minOnly->toString());
+        $this->assertSame('PriceCents::800000', $maxOnly->toString());
+    }
+
+    public function test_query_with_attributes_by_id(): void
+    {
+        $query = new SearchQuery(
+            attributesById: [98, 5225],
+        );
+        $url = $query->buildUrl();
+
+        $this->assertStringContainsString('attributesById%5B%5D=98', $url);
+        $this->assertStringContainsString('attributesById%5B%5D=5225', $url);
+    }
+
+    public function test_query_with_attributes_by_key(): void
+    {
+        $query = new SearchQuery(
+            attributesByKey: [
+                new AttributeByKey('offeredSince', 'Altijd'),
+            ],
+        );
+        $url = $query->buildUrl();
+
+        $this->assertStringContainsString('attributesByKey%5B%5D=offeredSince%3AAltijd', $url);
+    }
+
+    public function test_query_with_all_filter_params(): void
+    {
+        $query = new SearchQuery(
+            query: 'sv 650',
+            l1CategoryId: 678,
+            l2CategoryId: 707,
+            limit: 30,
+            offset: 0,
+            searchInTitleAndDescription: true,
+            viewOptions: ViewOptionKind::LIST_VIEW,
+            postcode: '7721AL',
+            attributeRanges: [
+                new AttributeRange('PriceCents', 50000, 800000),
+                new AttributeRange('constructionYear', 2016, 2024),
+                new AttributeRange('mileage', 10000, 40000),
+            ],
+            attributesById: [98, 5225],
+            attributesByKey: [
+                new AttributeByKey('offeredSince', 'Altijd'),
+            ],
+        );
+        $url = $query->buildUrl();
+
+        $this->assertStringContainsString('query=sv+650', $url);
+        $this->assertStringContainsString('l1CategoryId=678', $url);
+        $this->assertStringContainsString('l2CategoryId=707', $url);
+        $this->assertStringContainsString('limit=30', $url);
+        $this->assertStringContainsString('postcode=7721AL', $url);
+        $this->assertStringContainsString('attributeRanges%5B%5D=PriceCents%3A50000%3A800000', $url);
+        $this->assertStringContainsString('attributesById%5B%5D=98', $url);
+        $this->assertStringContainsString('attributesByKey%5B%5D=offeredSince%3AAltijd', $url);
+    }
+
+    public function test_empty_array_params_omitted_from_url(): void
+    {
+        $query = new SearchQuery;
+        $url = $query->buildUrl();
+
+        $this->assertStringNotContainsString('attributeRanges', $url);
+        $this->assertStringNotContainsString('attributesById', $url);
+        $this->assertStringNotContainsString('attributesByKey', $url);
+    }
+
+    public function test_to_array_query_params_empty_by_default(): void
+    {
+        $query = new SearchQuery;
+
+        $this->assertSame([], $query->toArrayQueryParams());
+    }
+
+    public function test_to_array_query_params_returns_formatted_values(): void
+    {
+        $query = new SearchQuery(
+            attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
+            attributesById: [98],
+            attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],
+        );
+
+        $arrayParams = $query->toArrayQueryParams();
+
+        $this->assertSame(['PriceCents:50000:800000'], $arrayParams['attributeRanges']);
+        $this->assertSame(['98'], $arrayParams['attributesById']);
+        $this->assertSame(['offeredSince:Altijd'], $arrayParams['attributesByKey']);
+    }
+
+    public function test_cache_key_includes_filter_params(): void
+    {
+        $withFilters = new SearchQuery(
+            attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
+        );
+        $withoutFilters = new SearchQuery;
+
+        $this->assertNotSame($withFilters->buildCacheKey(), $withoutFilters->buildCacheKey());
+    }
+
+    public function test_cache_key_deterministic_with_filter_params(): void
+    {
+        $query1 = new SearchQuery(
+            attributeRanges: [
+                new AttributeRange('PriceCents', 50000, 800000),
+                new AttributeRange('mileage', 10000, 40000),
+            ],
+            attributesById: [98, 5225],
+        );
+        $query2 = new SearchQuery(
+            attributeRanges: [
+                new AttributeRange('PriceCents', 50000, 800000),
+                new AttributeRange('mileage', 10000, 40000),
+            ],
+            attributesById: [98, 5225],
+        );
+
+        $this->assertSame($query1->buildCacheKey(), $query2->buildCacheKey());
+    }
+
+    public function test_with_offset_preserves_filter_params(): void
+    {
+        $original = new SearchQuery(
+            postcode: '7721AL',
+            attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
+            attributesById: [98],
+            attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],
+        );
+
+        $modified = $original->withOffset(30);
+
+        $this->assertSame(30, $modified->offset);
+        $this->assertSame('7721AL', $modified->postcode);
+        $this->assertCount(1, $modified->attributeRanges);
+        $this->assertSame('PriceCents', $modified->attributeRanges[0]->attribute);
+        $this->assertSame([98], $modified->attributesById);
+        $this->assertCount(1, $modified->attributesByKey);
+        $this->assertSame('offeredSince', $modified->attributesByKey[0]->key);
+    }
+
+    public function test_motorcycle_with_offset_preserves_filter_params(): void
+    {
+        $original = new MotorcycleSearchQuery(
+            query: 'sv 650',
+            postcode: '7721AL',
+            attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
+            attributesById: [98],
+            attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],
+        );
+
+        $modified = $original->withOffset(30);
+
+        $this->assertSame(30, $modified->offset);
+        $this->assertSame('sv 650', $modified->query);
+        $this->assertSame('7721AL', $modified->postcode);
+        $this->assertCount(1, $modified->attributeRanges);
+        $this->assertSame([98], $modified->attributesById);
+        $this->assertCount(1, $modified->attributesByKey);
+        $this->assertTrue($modified->strictMode);
+    }
+
+    public function test_attribute_range_to_array_and_from_array(): void
+    {
+        $range = new AttributeRange('PriceCents', 50000, 800000);
+        $array = $range->toArray();
+
+        $this->assertSame([
+            'attribute' => 'PriceCents',
+            'from' => 50000,
+            'to' => 800000,
+        ], $array);
+
+        $restored = AttributeRange::fromArray($array);
+        $this->assertSame('PriceCents', $restored->attribute);
+        $this->assertSame(50000, $restored->from);
+        $this->assertSame(800000, $restored->to);
+    }
+
+    public function test_attribute_by_key_to_array_and_from_array(): void
+    {
+        $attr = new AttributeByKey('offeredSince', 'Altijd');
+        $array = $attr->toArray();
+
+        $this->assertSame([
+            'key' => 'offeredSince',
+            'value' => 'Altijd',
+        ], $array);
+
+        $restored = AttributeByKey::fromArray($array);
+        $this->assertSame('offeredSince', $restored->key);
+        $this->assertSame('Altijd', $restored->value);
     }
 }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NiekNijland\Marktplaats\Tests\Testing;
 
 use NiekNijland\Marktplaats\Data\Enums\PriceType;
+use NiekNijland\Marktplaats\Data\ListingDetail;
+use NiekNijland\Marktplaats\Testing\ListingDetailFactory;
 use NiekNijland\Marktplaats\Testing\ListingFactory;
 use NiekNijland\Marktplaats\Testing\LocationFactory;
 use NiekNijland\Marktplaats\Testing\MotorcycleBrandCatalogFactory;
@@ -100,5 +102,53 @@ class FactoryTest extends TestCase
         $result = SearchResultFactory::make(listings: $listings, totalResultCount: 3);
 
         $this->assertCount(3, $result->listings);
+    }
+
+    public function test_listing_detail_factory_creates_valid_detail(): void
+    {
+        $detail = ListingDetailFactory::make();
+
+        $this->assertNotEmpty($detail->itemId);
+        $this->assertSame('Test Listing Detail', $detail->title);
+        $this->assertSame('A detailed description of the listing.', $detail->description);
+        $this->assertSame('OFFERED', $detail->adType);
+        $this->assertNotNull($detail->priceInfo);
+        $this->assertSame(450000, $detail->priceInfo->priceCents);
+        $this->assertNotNull($detail->seller);
+        $this->assertSame('Test Seller', $detail->seller->name);
+        $this->assertNotNull($detail->category);
+        $this->assertSame(696, $detail->category->id);
+        $this->assertNotNull($detail->stats);
+        $this->assertSame(150, $detail->stats->viewCount);
+    }
+
+    public function test_listing_detail_factory_accepts_overrides(): void
+    {
+        $detail = ListingDetailFactory::make([
+            'title' => 'Custom Detail Title',
+            'description' => 'Custom description',
+        ]);
+
+        $this->assertSame('Custom Detail Title', $detail->title);
+        $this->assertSame('Custom description', $detail->description);
+    }
+
+    public function test_listing_detail_factory_make_many(): void
+    {
+        $details = ListingDetailFactory::makeMany(4);
+
+        $this->assertCount(4, $details);
+    }
+
+    public function test_listing_detail_factory_roundtrip(): void
+    {
+        $original = ListingDetailFactory::make();
+        $array = $original->toArray();
+        $restored = ListingDetail::fromArray($array);
+
+        $this->assertSame($original->itemId, $restored->itemId);
+        $this->assertSame($original->title, $restored->title);
+        $this->assertSame($original->description, $restored->description);
+        $this->assertSame($original->fullUrl, $restored->fullUrl);
     }
 }

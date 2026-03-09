@@ -1,0 +1,399 @@
+{
+  "listings": [
+    {
+      "itemId": "m2100000001",
+      "title": "Honda CBR600RR 2021",
+      "description": "Prachtige Honda CBR600RR in perfecte staat. Weinig kilometers gereden.",
+      "categorySpecificDescription": null,
+      "categoryId": 696,
+      "vipUrl": "/v/motoren/honda/m2100000001-honda-cbr600rr-2021",
+      "priceInfo": {
+        "priceCents": 899500,
+        "priceType": "FIXED"
+      },
+      "location": {
+        "cityName": "Amsterdam",
+        "countryName": "Nederland",
+        "countryAbbreviation": "NL",
+        "distanceMeters": null,
+        "isBuyerLocation": false,
+        "onCountryLevel": false,
+        "abroad": false,
+        "latitude": 52.3676,
+        "longitude": 4.9041
+      },
+      "imageUrls": [
+        "https://images.marktplaats.com/api/v1/listing-mp-p/images/01/01abc-1.jpg"
+      ],
+      "pictures": [
+        {
+          "id": 1,
+          "mediaId": "01abc-1",
+          "url": "https://images.marktplaats.com/api/v1/listing-mp-p/images/01/01abc-1.jpg",
+          "extraSmallUrl": "https://images.marktplaats.com/api/v1/listing-mp-p/images/01/01abc-1.jpg?rule=$_2.jpg",
+          "mediumUrl": "https://images.marktplaats.com/api/v1/listing-mp-p/images/01/01abc-1.jpg?rule=$_14.jpg",
+          "largeUrl": "https://images.marktplaats.com/api/v1/listing-mp-p/images/01/01abc-1.jpg?rule=$_84.jpg",
+          "extraExtraLargeUrl": "https://images.marktplaats.com/api/v1/listing-mp-p/images/01/01abc-1.jpg?rule=$_86.jpg",
+          "sizes": {},
+          "aspectRatio": {
+            "width": 4,
+            "height": 3
+          }
+        }
+      ],
+      "sellerInformation": {
+        "sellerId": 10001,
+        "sellerName": "MotorDealer Amsterdam",
+        "showSoiUrl": true,
+        "showWebsiteUrl": true,
+        "sellerWebsiteUrl": "https://example.com/dealer",
+        "sellerLogoUrl": null,
+        "isVerified": true
+      },
+      "attributes": [
+        {
+          "key": "constructionYear",
+          "value": "2021",
+          "values": ["2021"]
+        },
+        {
+          "key": "mileage",
+          "value": "12500",
+          "values": ["12500"]
+        }
+      ],
+      "extendedAttributes": [
+        {
+          "key": "engineDisplacement",
+          "value": "599",
+          "values": ["599"]
+        }
+      ],
+      "traits": ["VERIFIED_DEALER"],
+      "verticals": ["MOTOR"],
+      "date": "2025-01-10T10:00:00+0100",
+      "priorityProduct": "DAGTOPPER",
+      "reserved": false,
+      "searchType": "TokenMatch",
+      "thinContent": false,
+      "videoOnVip": false,
+      "urgencyFeatureActive": true,
+      "napAvailable": true,
+      "trackingData": null,
+      "pageLocation": null,
+      "opvalStickerText": null,
+      "highlights": [],
+      "trustIndicators": []
+    },
+    {
+      "itemId": "m2100000002",
+      "title": "Yamaha MT-07 2023 ABS",
+      "description": "Yamaha MT-07 in zeer goede staat. Eerste eigenaar.",
+      "categorySpecificDescription": null,
+      "categoryId": 710,
+      "vipUrl": "/v/motoren/yamaha/m2100000002-yamaha-mt07-2023",
+      "priceInfo": {
+        "priceCents": 699900,
+        "priceType": "FIXED"
+      },
+      "location": {
+        "cityName": "Rotterdam",
+        "countryName": "Nederland",
+        "countryAbbreviation": "NL",
+        "distanceMeters": null,
+        "isBuyerLocation": false,
+        "onCountryLevel": false,
+        "abroad": false,
+        "latitude": null,
+        "longitude": null
+      },
+      "imageUrls": [],
+      "pictures": [],
+      "sellerInformation": {
+        "sellerId": 10002,
+        "sellerName": "Jan",
+        "showSoiUrl": true,
+        "showWebsiteUrl": false,
+        "sellerWebsiteUrl": null,
+        "sellerLogoUrl": null,
+        "isVerified": false
+      },
+      "attributes": [],
+      "extendedAttributes": [],
+      "traits": [],
+      "verticals": [],
+      "date": "2025-01-12T14:30:00+0100",
+      "priorityProduct": "NONE",
+      "reserved": false,
+      "searchType": "TokenMatch",
+      "thinContent": false,
+      "videoOnVip": false,
+      "urgencyFeatureActive": false,
+      "napAvailable": false,
+      "trackingData": null,
+      "pageLocation": null,
+      "opvalStickerText": null,
+      "highlights": [],
+      "trustIndicators": []
+    },
+    {
+      "itemId": "m2100000003",
+      "title": "Motorhelm Shoei NXR2",
+      "description": "Nieuw in doos, maat L.",
+      "categorySpecificDescription": null,
+      "categoryId": 723,
+      "vipUrl": "/v/motoren/overige-motoren/m2100000003-motorhelm-shoei",
+      "priceInfo": {
+        "priceCents": 35000,
+        "priceType": "FIXED"
+      },
+      "location": {
+        "cityName": "Utrecht",
+        "countryName": "Nederland",
+        "countryAbbreviation": "NL",
+        "distanceMeters": null,
+        "isBuyerLocation": false,
+        "onCountryLevel": false,
+        "abroad": false,
+        "latitude": null,
+        "longitude": null
+      },
+      "imageUrls": [],
+      "pictures": [],
+      "sellerInformation": null,
+      "attributes": [],
+      "extendedAttributes": [],
+      "traits": [],
+      "verticals": [],
+      "date": "2025-01-14T09:00:00+0100",
+      "priorityProduct": "NONE",
+      "reserved": false,
+      "searchType": "TokenMatch",
+      "thinContent": false,
+      "videoOnVip": false,
+      "urgencyFeatureActive": false,
+      "napAvailable": false,
+      "trackingData": null,
+      "pageLocation": null,
+      "opvalStickerText": null,
+      "highlights": [],
+      "trustIndicators": []
+    }
+  ],
+  "topBlock": [
+    {
+      "itemId": "m2100000001",
+      "title": "Honda CBR600RR 2021",
+      "description": "Prachtige Honda CBR600RR in perfecte staat.",
+      "categorySpecificDescription": null,
+      "categoryId": 696,
+      "vipUrl": "/v/motoren/honda/m2100000001-honda-cbr600rr-2021",
+      "priceInfo": {
+        "priceCents": 899500,
+        "priceType": "FIXED"
+      },
+      "location": {
+        "cityName": "Amsterdam",
+        "countryName": "Nederland",
+        "countryAbbreviation": "NL",
+        "distanceMeters": null,
+        "isBuyerLocation": false,
+        "onCountryLevel": false,
+        "abroad": false,
+        "latitude": null,
+        "longitude": null
+      },
+      "imageUrls": [],
+      "pictures": [],
+      "sellerInformation": null,
+      "attributes": [],
+      "extendedAttributes": [],
+      "traits": [],
+      "verticals": [],
+      "date": "2025-01-10T10:00:00+0100",
+      "priorityProduct": "DAGTOPPER",
+      "reserved": false,
+      "searchType": "TokenMatch",
+      "thinContent": false,
+      "videoOnVip": false,
+      "urgencyFeatureActive": false,
+      "napAvailable": false,
+      "trackingData": null,
+      "pageLocation": null,
+      "opvalStickerText": null,
+      "highlights": [],
+      "trustIndicators": []
+    }
+  ],
+  "facets": [
+    {
+      "key": "categories",
+      "type": "CategoryTreeFacet",
+      "categories": [
+        {
+          "id": 696,
+          "label": "Honda",
+          "key": "honda",
+          "parentId": 678,
+          "parentKey": "motoren",
+          "selected": false,
+          "histogramCount": 1200,
+          "isValuableForSeo": true,
+          "dominant": false
+        },
+        {
+          "id": 710,
+          "label": "Yamaha",
+          "key": "yamaha",
+          "parentId": 678,
+          "parentKey": "motoren",
+          "selected": false,
+          "histogramCount": 980,
+          "isValuableForSeo": true,
+          "dominant": false
+        }
+      ]
+    },
+    {
+      "id": 100,
+      "key": "constructionYear",
+      "type": "AttributeRangeFacet"
+    },
+    {
+      "id": 200,
+      "key": "brand",
+      "type": "AttributeGroupFacet",
+      "label": "Merk",
+      "singleSelect": true,
+      "categoryId": 678,
+      "attributeGroup": [
+        {
+          "attributeValueKey": "honda",
+          "attributeValueId": 696,
+          "attributeValueLabel": "Honda",
+          "histogramCount": 1200,
+          "selected": false,
+          "isValuableForSeo": true,
+          "default": false
+        }
+      ]
+    }
+  ],
+  "totalResultCount": 3,
+  "maxAllowedPageNumber": 1,
+  "correlationId": "test-correlation-id-123",
+  "originalQuery": "",
+  "sortOptions": [
+    {
+      "sortBy": "SORT_INDEX",
+      "sortOrder": "DECREASING"
+    },
+    {
+      "sortBy": "PRICE",
+      "sortOrder": "INCREASING"
+    }
+  ],
+  "searchCategory": 678,
+  "searchCategoryOptions": [
+    {
+      "id": 696,
+      "key": "honda",
+      "name": "Honda",
+      "fullName": "Motoren | Honda",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 710,
+      "key": "yamaha",
+      "name": "Yamaha",
+      "fullName": "Motoren | Yamaha",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 692,
+      "key": "bmw",
+      "name": "BMW",
+      "fullName": "Motoren | BMW",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 703,
+      "key": "oldtimers",
+      "name": "Oldtimers",
+      "fullName": "Motoren | Oldtimers",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 705,
+      "key": "schademotoren",
+      "name": "Schademotoren",
+      "fullName": "Motoren | Schademotoren",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 704,
+      "key": "overige-merken",
+      "name": "Overige merken",
+      "fullName": "Motoren | Overige merken",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 700,
+      "key": "zijspanmotoren",
+      "name": "Zijspanmotoren",
+      "fullName": "Motoren | Zijspanmotoren",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 689,
+      "key": "motorkleding",
+      "name": "Motorkleding",
+      "fullName": "Motoren | Motorkleding",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 723,
+      "key": "overige-motoren",
+      "name": "Overige Motoren",
+      "fullName": "Motoren | Overige Motoren",
+      "parentId": 678,
+      "parentKey": "motoren"
+    }
+  ],
+  "searchRequest": {
+    "searchQuery": "",
+    "categories": {
+      "l1CategoryId": 678,
+      "l1CategoryKey": "motoren",
+      "l1CategoryFullName": "Motoren",
+      "l2CategoryId": null,
+      "l2CategoryKey": null,
+      "l2CategoryFullName": null
+    },
+    "sortOptions": {
+      "sortBy": "SORT_INDEX",
+      "sortOrder": "DECREASING"
+    },
+    "pagination": {
+      "offset": 0,
+      "limit": 100
+    },
+    "viewOptions": {
+      "viewOptions": "gallery-view"
+    },
+    "originalRequest": null
+  },
+  "metaTags": {
+    "metaTitle": "Motoren kopen | Marktplaats.nl",
+    "metaDescription": "Vind de beste motoren op Marktplaats.nl",
+    "pageTitleH1": "Motoren"
+  }
+}

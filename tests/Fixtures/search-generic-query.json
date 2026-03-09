@@ -1,0 +1,69 @@
+{
+  "listings": [
+    {
+      "itemId": "m3100000001",
+      "title": "iPhone 15 Pro Max 256GB",
+      "description": "Nieuw en ongebruikt.",
+      "categorySpecificDescription": null,
+      "categoryId": 350,
+      "vipUrl": "/v/telecommunicatie/mobiele-telefoons-apple-iphone/m3100000001-iphone-15",
+      "priceInfo": {
+        "priceCents": 110000,
+        "priceType": "FIXED"
+      },
+      "location": {
+        "cityName": "Den Haag",
+        "countryName": "Nederland",
+        "countryAbbreviation": "NL",
+        "distanceMeters": null,
+        "isBuyerLocation": false,
+        "onCountryLevel": false,
+        "abroad": false,
+        "latitude": null,
+        "longitude": null
+      },
+      "imageUrls": [],
+      "pictures": [],
+      "sellerInformation": null,
+      "attributes": [],
+      "extendedAttributes": [],
+      "traits": [],
+      "verticals": [],
+      "date": "2025-01-15T08:00:00+0100",
+      "priorityProduct": "NONE",
+      "reserved": false,
+      "searchType": "TokenMatch",
+      "thinContent": false,
+      "videoOnVip": false,
+      "urgencyFeatureActive": false,
+      "napAvailable": false,
+      "trackingData": null,
+      "pageLocation": null,
+      "opvalStickerText": null,
+      "highlights": [
+        {
+          "key": "title",
+          "value": "<em>iPhone</em> 15 Pro Max"
+        }
+      ],
+      "trustIndicators": [
+        {
+          "key": "id_verified",
+          "label": "ID geverifieerd",
+          "value": "true"
+        }
+      ]
+    }
+  ],
+  "topBlock": [],
+  "facets": [],
+  "totalResultCount": 1,
+  "maxAllowedPageNumber": 1,
+  "correlationId": "generic-correlation-789",
+  "originalQuery": "iphone",
+  "sortOptions": [],
+  "searchCategory": null,
+  "searchCategoryOptions": [],
+  "searchRequest": null,
+  "metaTags": null
+}

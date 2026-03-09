@@ -1,0 +1,9 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    tmpDir: build/phpstan
+    ignoreErrors:
+        -
+            identifier: method.childParameterType
+            path: src/Data/MotorcycleSearchQuery.php

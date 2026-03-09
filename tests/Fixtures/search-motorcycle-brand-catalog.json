@@ -1,0 +1,103 @@
+{
+  "listings": [],
+  "topBlock": [],
+  "facets": [],
+  "totalResultCount": 0,
+  "maxAllowedPageNumber": 0,
+  "correlationId": "brand-catalog-001",
+  "originalQuery": "",
+  "sortOptions": [],
+  "searchCategory": 678,
+  "searchCategoryOptions": [
+    {
+      "id": 691,
+      "key": "aprilia",
+      "name": "Aprilia",
+      "fullName": "Motoren | Aprilia",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 692,
+      "key": "bmw",
+      "name": "BMW",
+      "fullName": "Motoren | BMW",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 694,
+      "key": "ducati",
+      "name": "Ducati",
+      "fullName": "Motoren | Ducati",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 696,
+      "key": "honda",
+      "name": "Honda",
+      "fullName": "Motoren | Honda",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 697,
+      "key": "kawasaki",
+      "name": "Kawasaki",
+      "fullName": "Motoren | Kawasaki",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 710,
+      "key": "yamaha",
+      "name": "Yamaha",
+      "fullName": "Motoren | Yamaha",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 703,
+      "key": "oldtimers",
+      "name": "Oldtimers",
+      "fullName": "Motoren | Oldtimers",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 705,
+      "key": "schademotoren",
+      "name": "Schademotoren",
+      "fullName": "Motoren | Schademotoren",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 704,
+      "key": "overige-merken",
+      "name": "Overige merken",
+      "fullName": "Motoren | Overige merken",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 700,
+      "key": "zijspanmotoren",
+      "name": "Zijspanmotoren",
+      "fullName": "Motoren | Zijspanmotoren",
+      "parentId": 678,
+      "parentKey": "motoren"
+    },
+    {
+      "id": 689,
+      "key": "motorkleding",
+      "name": "Motorkleding",
+      "fullName": "Motoren | Motorkleding",
+      "parentId": 678,
+      "parentKey": "motoren"
+    }
+  ],
+  "searchRequest": null,
+  "metaTags": null
+}

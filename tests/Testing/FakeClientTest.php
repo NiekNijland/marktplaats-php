@@ -83,8 +83,8 @@ class FakeClientTest extends TestCase
     public function test_fake_search_with_excluded_categories(): void
     {
         $seeded = SearchResultFactory::make(
-            totalResultCount: 10,
             listings: ListingFactory::makeMany(3, ['categoryId' => 723]),
+            totalResultCount: 10,
         );
         $fake = new FakeClient;
         $fake->seedSearchResult($seeded);

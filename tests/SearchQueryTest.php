@@ -359,8 +359,8 @@ class SearchQueryTest extends TestCase
         $original = new SearchQuery(
             query: 'sv 650',
             l1CategoryId: 678,
-            postcode: '7721AL',
             excludedCategoryIds: [723, 724],
+            postcode: '7721AL',
             attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
             attributesById: [98],
             attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],

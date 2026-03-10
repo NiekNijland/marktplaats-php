@@ -2,6 +2,10 @@
 
 All notable changes to `marktplaats-php` will be documented in this file.
 
+## v0.2.0 - 2026-03-10
+
+Improved query structure. cleanup.
+
 ## Unreleased
 
 ### Changed

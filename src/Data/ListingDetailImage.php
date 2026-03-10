@@ -38,6 +38,24 @@ readonly class ListingDetailImage
             return null;
         }
 
+        if (str_contains($baseUrl, '#')) {
+            return str_replace('#', $rule, $baseUrl);
+        }
+
+        if (preg_match('/([?&]rule=)([^&]+)/', $baseUrl, $matches, PREG_OFFSET_CAPTURE) === 1) {
+            $existingRule = $matches[2][0];
+            $existingRuleOffset = $matches[2][1];
+            $updatedRule = preg_replace_callback(
+                '/(\$_)[^.&?#]*(\.[^.&?#]+)?$/',
+                fn (array $captures): string => $captures[1].$rule.($captures[2] ?? ''),
+                $existingRule,
+            );
+
+            if (is_string($updatedRule) && $updatedRule !== '' && $updatedRule !== $existingRule) {
+                return substr_replace($baseUrl, $updatedRule, $existingRuleOffset, strlen($existingRule));
+            }
+        }
+
         $baseWithoutQuery = explode('?', $baseUrl, 2)[0];
 
         return $baseWithoutQuery.'?rule=$_'.$rule.'.jpg';

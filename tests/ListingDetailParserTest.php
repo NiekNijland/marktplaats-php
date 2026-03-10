@@ -144,6 +144,55 @@ class ListingDetailParserTest extends TestCase
         $this->assertStringContainsString('rule=$_84.jpg', $detail->getImageUrl(0, 'XL') ?? '');
     }
 
+    public function test_parse_html_resolves_template_image_urls_using_m_size_rule(): void
+    {
+        $html = '<script>window.__CONFIG__ = '.json_encode([
+            'listing' => [
+                'itemId' => 'm1',
+                'title' => 'Test',
+                'gallery' => [
+                    'imageUrls' => [
+                        '//images.marktplaats.com/api/v1/listing-mp-p/images/22/221432d0.jpg?rule=ecg_mp_eps$_#.jpg',
+                    ],
+                    'media' => [
+                        'imageSizes' => [
+                            'XL' => '84',
+                            'M' => '82',
+                        ],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR).';</script>';
+
+        $detail = $this->parser->parseHtml($html, '/v/test');
+
+        $this->assertSame([
+            'https://images.marktplaats.com/api/v1/listing-mp-p/images/22/221432d0.jpg?rule=ecg_mp_eps$_82.jpg',
+        ], $detail->imageUrls);
+    }
+
+    public function test_parse_html_skips_unresolved_template_image_urls_without_sizes(): void
+    {
+        $html = '<script>window.__CONFIG__ = '.json_encode([
+            'listing' => [
+                'itemId' => 'm1',
+                'title' => 'Test',
+                'gallery' => [
+                    'imageUrls' => [
+                        '//images.marktplaats.com/api/v1/listing-mp-p/images/22/221432d0.jpg?rule=ecg_mp_eps$_#.jpg',
+                    ],
+                    'media' => [
+                        'imageSizes' => [],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR).';</script>';
+
+        $detail = $this->parser->parseHtml($html, '/v/test');
+
+        $this->assertSame([], $detail->imageUrls);
+    }
+
     public function test_parse_html_extracts_shipping(): void
     {
         $detail = $this->parser->parseHtml($this->fixtureHtml, '/v/test');

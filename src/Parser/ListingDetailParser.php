@@ -251,6 +251,7 @@ class ListingDetailParser
     private function parseImageUrls(array $gallery): array
     {
         $rawImageUrls = is_array($gallery['imageUrls'] ?? null) ? $gallery['imageUrls'] : [];
+        $imageSizes = $this->parseImageSizes($gallery);
 
         $imageUrls = [];
 
@@ -259,10 +260,45 @@ class ListingDetailParser
                 continue;
             }
 
-            $imageUrls[] = UrlResolver::resolveProtocolRelative($url);
+            $resolvedUrl = UrlResolver::resolveProtocolRelative($url);
+            $resolvedUrl = $this->resolveImageUrlTemplate($resolvedUrl, $imageSizes);
+
+            if ($resolvedUrl === null) {
+                continue;
+            }
+
+            $imageUrls[] = $resolvedUrl;
         }
 
         return $imageUrls;
+    }
+
+    /**
+     * @param  array<string, string>  $imageSizes
+     */
+    private function resolveImageUrlTemplate(string $url, array $imageSizes): ?string
+    {
+        if (! str_contains($url, '#')) {
+            return $url;
+        }
+
+        $rule = $imageSizes['M'] ?? $imageSizes['XL'] ?? null;
+
+        if ($rule === null || $rule === '') {
+            foreach ($imageSizes as $candidateRule) {
+                if ($candidateRule !== '') {
+                    $rule = $candidateRule;
+
+                    break;
+                }
+            }
+        }
+
+        if ($rule === null || $rule === '') {
+            return null;
+        }
+
+        return str_replace('#', $rule, $url);
     }
 
     /**

@@ -99,7 +99,7 @@ readonly class SearchQuery
             $params['distanceMeters'] = $this->distanceMeters;
         }
 
-        if ($this->offerType !== null) {
+        if ($this->offerType instanceof OfferType) {
             $params['offerType'] = $this->offerType->value;
         }
 

@@ -31,11 +31,11 @@ readonly class SearchRequestCategories
      */
     public static function fromArray(array $data): self
     {
-        $l1CategoryId = isset($data['l1CategoryId']) ? (int) $data['l1CategoryId'] : null;
+        $l1CategoryId = isset($data['l1CategoryId']) ? $data['l1CategoryId'] : null;
         $l1CategoryKey = is_string($data['l1CategoryKey'] ?? null) ? $data['l1CategoryKey'] : null;
         $l1CategoryFullName = is_string($data['l1CategoryFullName'] ?? null) ? $data['l1CategoryFullName'] : null;
 
-        $l2CategoryId = isset($data['l2CategoryId']) ? (int) $data['l2CategoryId'] : null;
+        $l2CategoryId = isset($data['l2CategoryId']) ? $data['l2CategoryId'] : null;
         $l2CategoryKey = is_string($data['l2CategoryKey'] ?? null) ? $data['l2CategoryKey'] : null;
         $l2CategoryFullName = is_string($data['l2CategoryFullName'] ?? null) ? $data['l2CategoryFullName'] : null;
 

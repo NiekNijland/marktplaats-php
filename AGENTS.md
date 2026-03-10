@@ -33,7 +33,7 @@ vendor/bin/phpunit tests/ParserTest.php
 
 ## Architecture
 
-See `BLUEPRINT.md` for the full reference. Key rules:
+Key rules:
 
 - **Interface-first**: `ClientInterface` defines the public API. Both `Client` and `FakeClient` implement it.
 - **Immutable DTOs**: All data classes are `readonly class` with promoted constructor properties.

@@ -63,6 +63,7 @@ class FakeClientTest extends TestCase
         $fake->getSearch(new SearchQuery);
 
         $fake->assertCalled('getSearch');
+        $this->addToAssertionCount(1);
     }
 
     public function test_assert_not_called(): void
@@ -70,6 +71,7 @@ class FakeClientTest extends TestCase
         $fake = new FakeClient;
 
         $fake->assertNotCalled('getSearch');
+        $this->addToAssertionCount(1);
     }
 
     public function test_assert_called_times(): void
@@ -79,6 +81,7 @@ class FakeClientTest extends TestCase
         $fake->getSearch(new SearchQuery);
 
         $fake->assertCalledTimes('getSearch', 2);
+        $this->addToAssertionCount(1);
     }
 
     public function test_fake_search_with_excluded_categories(): void
@@ -179,6 +182,7 @@ class FakeClientTest extends TestCase
         $fake->resetSession();
 
         $fake->assertCalled('resetSession');
+        $this->addToAssertionCount(1);
     }
 
     public function test_multiple_seeded_results_consumed_in_order(): void

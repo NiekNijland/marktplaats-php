@@ -7,6 +7,7 @@ namespace NiekNijland\Marktplaats\Tests;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use NiekNijland\Marktplaats\Client;
 use NiekNijland\Marktplaats\Data\Category;
@@ -182,6 +183,33 @@ class ClientTest extends TestCase
 
         // totalResultCount is the original API count, not the filtered count
         $this->assertSame(3, $result->totalResultCount);
+    }
+
+    public function test_search_excluded_categories_filters_top_block(): void
+    {
+        $payload = json_encode([
+            'listings' => [
+                ['itemId' => 'm-allowed', 'title' => 'Allowed', 'categoryId' => 710],
+            ],
+            'topBlock' => [
+                ['itemId' => 'm-top-excluded', 'title' => 'Top Excluded', 'categoryId' => 723],
+            ],
+            'totalResultCount' => 2,
+            'maxAllowedPageNumber' => 1,
+        ], JSON_THROW_ON_ERROR);
+
+        $mock = new MockHandler([
+            new Response(200, [], $payload),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $result = $client->getSearch(new SearchQuery(categoryId: 678), [723]);
+
+        $this->assertCount(1, $result->listings);
+        $this->assertSame([], $result->topBlock);
     }
 
     public function test_get_search_all_yields_listings(): void
@@ -450,6 +478,55 @@ class ClientTest extends TestCase
         $this->expectExceptionMessage('not found');
 
         $client->getListing('https://www.marktplaats.nl/v/motoren/nonexistent');
+    }
+
+    public function test_reset_session_clears_cookie_header_for_follow_up_requests(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $history = [];
+
+        $mock = new MockHandler([
+            new Response(200, ['Set-Cookie' => 'session=abc123; Path=/'], $fixture),
+            new Response(200, [], $fixture),
+            new Response(200, [], $fixture),
+        ]);
+
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => $stack]),
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+        $client->resetSession();
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 2));
+
+        $this->assertCount(3, $history);
+        $this->assertFalse($history[0]['request']->hasHeader('Cookie'));
+        $this->assertSame('session=abc123', $history[1]['request']->getHeaderLine('Cookie'));
+        $this->assertFalse($history[2]['request']->hasHeader('Cookie'));
+    }
+
+    public function test_retries_on_429_when_configured(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+
+        $mock = new MockHandler([
+            new Response(429),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRetries: 1,
+            retryDelayMilliseconds: 0,
+        );
+
+        $result = $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $this->assertSame(3, $result->totalResultCount);
     }
 
     private function createClientWithFixture(string $fixture): Client

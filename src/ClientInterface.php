@@ -55,7 +55,7 @@ interface ClientInterface
     public function getListing(string $url): ListingDetail;
 
     /**
-     * Clears cache/session state held by the client instance.
+     * Clears session cookies held by the client instance.
      */
     public function resetSession(): void;
 }

@@ -6,6 +6,7 @@ namespace NiekNijland\Marktplaats\Tests;
 
 use NiekNijland\Marktplaats\Data\AttributeByKey;
 use NiekNijland\Marktplaats\Data\AttributeRange;
+use NiekNijland\Marktplaats\Data\Enums\OfferType;
 use NiekNijland\Marktplaats\Data\Enums\SortBy;
 use NiekNijland\Marktplaats\Data\Enums\SortOrder;
 use NiekNijland\Marktplaats\Data\Enums\ViewOptionKind;
@@ -156,10 +157,50 @@ class SearchQueryTest extends TestCase
 
     public function test_query_with_offer_type(): void
     {
-        $query = new SearchQuery(offerType: 'offered');
+        $query = new SearchQuery(offerType: OfferType::OFFERED);
         $url = $query->buildUrl();
 
         $this->assertStringContainsString('offerType=offered', $url);
+    }
+
+    public function test_query_builder_creates_expected_query(): void
+    {
+        $query = SearchQuery::builder()
+            ->query('sv 650')
+            ->categoryId(678)
+            ->subCategoryId(707)
+            ->limit(30)
+            ->offset(60)
+            ->postalcode('1234AB')
+            ->distanceMeters(10000)
+            ->offerType(OfferType::OFFERED)
+            ->addAttributeRange(new AttributeRange('PriceCents', 50000, 800000))
+            ->addAttributeId(98)
+            ->addAttributeByKey(new AttributeByKey('offeredSince', 'Altijd'))
+            ->build();
+
+        $url = $query->buildUrl();
+
+        $this->assertStringContainsString('query=sv+650', $url);
+        $this->assertStringContainsString('l1CategoryId=678', $url);
+        $this->assertStringContainsString('l2CategoryId=707', $url);
+        $this->assertStringContainsString('limit=30', $url);
+        $this->assertStringContainsString('offset=60', $url);
+        $this->assertStringContainsString('postcode=1234AB', $url);
+        $this->assertStringContainsString('distanceMeters=10000', $url);
+        $this->assertStringContainsString('offerType=offered', $url);
+        $this->assertStringContainsString('attributeRanges%5B%5D=PriceCents%3A50000%3A800000', $url);
+        $this->assertStringContainsString('attributesById%5B%5D=98', $url);
+        $this->assertStringContainsString('attributesByKey%5B%5D=offeredSince%3AAltijd', $url);
+    }
+
+    public function test_query_builder_uses_same_defaults_as_constructor(): void
+    {
+        $built = SearchQuery::builder()->build();
+        $default = new SearchQuery;
+
+        $this->assertSame($default->toQueryParams(), $built->toQueryParams());
+        $this->assertSame($default->toArrayQueryParams(), $built->toArrayQueryParams());
     }
 
     public function test_negative_distance_meters_throws(): void
@@ -238,7 +279,7 @@ class SearchQueryTest extends TestCase
             viewOptions: ViewOptionKind::LIST_VIEW,
             postalcode: '1234AB',
             distanceMeters: 10000,
-            offerType: 'offered',
+            offerType: OfferType::OFFERED,
             attributeRanges: [
                 new AttributeRange('PriceCents', 50000, 800000),
                 new AttributeRange('constructionYear', 2016, 2024),
@@ -330,7 +371,7 @@ class SearchQueryTest extends TestCase
         $original = new SearchQuery(
             postalcode: '1234AB',
             distanceMeters: 10000,
-            offerType: 'offered',
+            offerType: OfferType::OFFERED,
             attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
             attributesById: [98],
             attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],
@@ -341,7 +382,7 @@ class SearchQueryTest extends TestCase
         $this->assertSame(30, $modified->offset);
         $this->assertSame('1234AB', $modified->postalcode);
         $this->assertSame(10000, $modified->distanceMeters);
-        $this->assertSame('offered', $modified->offerType);
+        $this->assertSame(OfferType::OFFERED, $modified->offerType);
         $this->assertCount(1, $modified->attributeRanges);
         $this->assertSame('PriceCents', $modified->attributeRanges[0]->attribute);
         $this->assertSame([98], $modified->attributesById);
@@ -356,7 +397,7 @@ class SearchQueryTest extends TestCase
             categoryId: 678,
             postalcode: '1234AB',
             distanceMeters: 10000,
-            offerType: 'offered',
+            offerType: OfferType::OFFERED,
             attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
             attributesById: [98],
             attributesByKey: [new AttributeByKey('offeredSince', 'Altijd')],
@@ -368,7 +409,7 @@ class SearchQueryTest extends TestCase
         $this->assertSame('sv 650', $modified->query);
         $this->assertSame('1234AB', $modified->postalcode);
         $this->assertSame(10000, $modified->distanceMeters);
-        $this->assertSame('offered', $modified->offerType);
+        $this->assertSame(OfferType::OFFERED, $modified->offerType);
         $this->assertSame(678, $modified->categoryId);
         $this->assertCount(1, $modified->attributeRanges);
         $this->assertSame([98], $modified->attributesById);

@@ -4,6 +4,7 @@
 
 ```php
 use NiekNijland\Marktplaats\Client;
+use NiekNijland\Marktplaats\Data\Enums\OfferType;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 
 $client = new Client();
@@ -12,7 +13,7 @@ $result = $client->getSearch(new SearchQuery(
     query: 'honda cbr',
     categoryId: 678,
     distanceMeters: 25000,
-    offerType: 'offered',
+    offerType: OfferType::OFFERED,
     limit: 25,
 ));
 
@@ -21,6 +22,30 @@ foreach ($result->listings as $listing) {
     echo $listing->fullUrl . PHP_EOL;
     echo $listing->priceInfo?->priceCents . ' cents' . PHP_EOL;
 }
+```
+
+## Fluent Query Builder
+
+If you prefer a fluent API over a large constructor, use `SearchQuery::builder()`:
+
+```php
+use NiekNijland\Marktplaats\Data\AttributeByKey;
+use NiekNijland\Marktplaats\Data\AttributeRange;
+use NiekNijland\Marktplaats\Data\Enums\OfferType;
+use NiekNijland\Marktplaats\Data\SearchQuery;
+
+$query = SearchQuery::builder()
+    ->query('honda cbr')
+    ->categoryId(678)
+    ->subCategoryId(696)
+    ->postalcode('1012AB')
+    ->distanceMeters(25000)
+    ->offerType(OfferType::OFFERED)
+    ->addAttributeRange(new AttributeRange('PriceCents', 50000, 800000))
+    ->addAttributeByKey(new AttributeByKey('fuel', 'benzine'))
+    ->build();
+
+$result = $client->getSearch($query);
 ```
 
 ## Category Search with Catalog Discovery
@@ -164,6 +189,30 @@ $client = new Client(
 ```
 
 Note: `getSearchAll()` always fetches live (bypasses cache) to avoid stale pagination metadata.
+
+## Timeouts and Retries
+
+When you use the default internal Guzzle client, you can configure request timeout and optional retry/backoff:
+
+```php
+use NiekNijland\Marktplaats\Client;
+
+$client = new Client(
+    requestTimeoutSeconds: 10.0,
+    maxRetries: 2,
+    retryDelayMilliseconds: 200,
+);
+```
+
+Retries apply to transport failures and HTTP `429`/`5xx` responses.
+
+## Session Reset
+
+The client keeps cookies returned by Marktplaats for follow-up requests. You can clear those cookies explicitly:
+
+```php
+$client->resetSession();
+```
 
 ## Custom HTTP Client
 

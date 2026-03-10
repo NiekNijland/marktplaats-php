@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Data;
 
+use NiekNijland\Marktplaats\Data\Enums\OfferType;
 use NiekNijland\Marktplaats\Data\Enums\SortBy;
 use NiekNijland\Marktplaats\Data\Enums\SortOrder;
 use NiekNijland\Marktplaats\Data\Enums\ViewOptionKind;
@@ -12,6 +13,11 @@ use NiekNijland\Marktplaats\Exception\ClientException;
 readonly class SearchQuery
 {
     private const string BASE_URL = 'https://www.marktplaats.nl/lrp/api/search';
+
+    public static function builder(): SearchQueryBuilder
+    {
+        return new SearchQueryBuilder;
+    }
 
     /**
      * @param  list<AttributeRange>  $attributeRanges
@@ -30,7 +36,7 @@ readonly class SearchQuery
         public ViewOptionKind $viewOptions = ViewOptionKind::GALLERY_VIEW,
         public ?string $postalcode = null,
         public ?int $distanceMeters = null,
-        public ?string $offerType = null,
+        public ?OfferType $offerType = null,
         public array $attributeRanges = [],
         public array $attributesById = [],
         public array $attributesByKey = [],
@@ -94,7 +100,7 @@ readonly class SearchQuery
         }
 
         if ($this->offerType !== null) {
-            $params['offerType'] = $this->offerType;
+            $params['offerType'] = $this->offerType->value;
         }
 
         return $params;

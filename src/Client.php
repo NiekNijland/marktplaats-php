@@ -7,7 +7,6 @@ namespace NiekNijland\Marktplaats;
 use DateTimeImmutable;
 use Generator;
 use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Psr7\Request;
 use JsonException;
 use NiekNijland\Marktplaats\Data\CategoryCatalog;
 use NiekNijland\Marktplaats\Data\FilterCatalog;
@@ -18,24 +17,54 @@ use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Parser\ListingDetailParser;
 use NiekNijland\Marktplaats\Parser\SearchParser;
-use Psr\Http\Client\ClientExceptionInterface;
+use NiekNijland\Marktplaats\Support\CacheStore;
+use NiekNijland\Marktplaats\Support\HttpTransport;
+use NiekNijland\Marktplaats\Support\UrlResolver;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 use Psr\SimpleCache\CacheInterface;
-use Psr\SimpleCache\InvalidArgumentException;
 
 class Client implements ClientInterface
 {
-    private const string BASE_URL = 'https://www.marktplaats.nl';
-
     private SearchParser $searchParser;
 
     private ListingDetailParser $listingDetailParser;
 
+    private readonly HttpTransport $transport;
+
+    private readonly CacheStore $cacheStore;
+
     public function __construct(
-        private readonly HttpClientInterface $httpClient = new GuzzleClient,
-        private readonly ?CacheInterface $cache = null,
+        ?HttpClientInterface $httpClient = null,
+        ?CacheInterface $cache = null,
         private readonly int $cacheTtl = 3600,
+        private readonly float $requestTimeoutSeconds = 10.0,
+        private readonly int $maxRetries = 0,
+        private readonly int $retryDelayMilliseconds = 200,
     ) {
+        if ($this->requestTimeoutSeconds <= 0) {
+            throw new ClientException('requestTimeoutSeconds must be greater than 0');
+        }
+
+        if ($this->maxRetries < 0) {
+            throw new ClientException('maxRetries must be 0 or greater');
+        }
+
+        if ($this->retryDelayMilliseconds < 0) {
+            throw new ClientException('retryDelayMilliseconds must be 0 or greater');
+        }
+
+        $resolvedHttpClient = $httpClient ?? new GuzzleClient([
+            'timeout' => $this->requestTimeoutSeconds,
+        ]);
+
+        $this->transport = new HttpTransport(
+            httpClient: $resolvedHttpClient,
+            maxRetries: $this->maxRetries,
+            retryDelayMilliseconds: $this->retryDelayMilliseconds,
+        );
+
+        $this->cacheStore = new CacheStore($cache, $this->cacheTtl);
+
         $this->searchParser = new SearchParser;
         $this->listingDetailParser = new ListingDetailParser;
     }
@@ -44,13 +73,15 @@ class Client implements ClientInterface
     {
         $cacheKey = $query->buildCacheKey();
 
-        if (($cached = $this->fetchFromCache($cacheKey)) instanceof SearchResult) {
+        $cached = $this->cacheStore->fetch($cacheKey, static fn (array $data): SearchResult => SearchResult::fromArray($data));
+
+        if ($cached instanceof SearchResult) {
             return $cached->excludeCategories($excludedCategoryIds);
         }
 
         $result = $this->fetchSearchResult($query);
 
-        $this->storeInCache($cacheKey, $result);
+        $this->cacheStore->store($cacheKey, $result->toArray());
 
         return $result->excludeCategories($excludedCategoryIds);
     }
@@ -66,7 +97,7 @@ class Client implements ClientInterface
     public function getSearchAll(SearchQuery $query, array $excludedCategoryIds = []): Generator
     {
         $offset = $query->offset;
-        $yieldedCount = 0;
+        $yieldedIndex = 0;
         $previousItemIds = [];
         $maxIterations = 1000;
         $iteration = 0;
@@ -94,15 +125,11 @@ class Client implements ClientInterface
             $previousItemIds = $currentItemIds;
 
             foreach ($filteredResult->listings as $listing) {
-                yield $yieldedCount => $listing;
-                $yieldedCount++;
+                yield $yieldedIndex => $listing;
+                $yieldedIndex++;
             }
 
             $offset += $currentQuery->limit;
-
-            if ($yieldedCount >= $result->totalResultCount) {
-                break;
-            }
 
             $safetyBoundary = $result->maxAllowedPageNumber * $currentQuery->limit;
 
@@ -116,7 +143,9 @@ class Client implements ClientInterface
     {
         $cacheKey = 'marktplaats:categories:'.$categoryId;
 
-        if (($cached = $this->fetchCategoryCatalogFromCache($cacheKey)) instanceof CategoryCatalog) {
+        $cached = $this->cacheStore->fetch($cacheKey, static fn (array $data): CategoryCatalog => CategoryCatalog::fromArray($data));
+
+        if ($cached instanceof CategoryCatalog) {
             return $cached;
         }
 
@@ -140,7 +169,7 @@ class Client implements ClientInterface
             $categoryId,
         );
 
-        $this->storeCategoryCatalogInCache($cacheKey, $catalog);
+        $this->cacheStore->store($cacheKey, $catalog->toArray());
 
         return $catalog;
     }
@@ -149,7 +178,9 @@ class Client implements ClientInterface
     {
         $cacheKey = 'marktplaats:filters:'.$categoryId.':'.($subCategoryId ?? 'all');
 
-        if (($cached = $this->fetchFilterCatalogFromCache($cacheKey)) instanceof FilterCatalog) {
+        $cached = $this->cacheStore->fetch($cacheKey, static fn (array $data): FilterCatalog => FilterCatalog::fromArray($data));
+
+        if ($cached instanceof FilterCatalog) {
             return $cached;
         }
 
@@ -168,7 +199,7 @@ class Client implements ClientInterface
             discoveredAt: new DateTimeImmutable,
         );
 
-        $this->storeFilterCatalogInCache($cacheKey, $catalog);
+        $this->cacheStore->store($cacheKey, $catalog->toArray());
 
         return $catalog;
     }
@@ -178,34 +209,28 @@ class Client implements ClientInterface
         $fullUrl = $this->resolveListingUrl($url);
         $cacheKey = $this->buildListingDetailCacheKey($fullUrl);
 
-        if (($cached = $this->fetchListingDetailFromCache($cacheKey)) instanceof ListingDetail) {
+        $cached = $this->cacheStore->fetch($cacheKey, static fn (array $data): ListingDetail => ListingDetail::fromArray($data));
+
+        if ($cached instanceof ListingDetail) {
             return $cached;
         }
 
         $html = $this->fetchRawResponse($fullUrl);
         $detail = $this->listingDetailParser->parseHtml($html, $fullUrl);
 
-        $this->storeListingDetailInCache($cacheKey, $detail);
+        $this->cacheStore->store($cacheKey, $detail->toArray());
 
         return $detail;
     }
 
     public function resetSession(): void
     {
-        // Reserved for future session/cookie state clearing.
+        $this->transport->resetSession();
     }
 
     private function resolveListingUrl(string $url): string
     {
-        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
-            return $url;
-        }
-
-        if (str_starts_with($url, '/')) {
-            return self::BASE_URL.$url;
-        }
-
-        return self::BASE_URL.'/'.$url;
+        return UrlResolver::resolveAgainstBase($url);
     }
 
     private function fetchSearchResult(SearchQuery $query): SearchResult
@@ -218,180 +243,11 @@ class Client implements ClientInterface
 
     private function fetchRawResponse(string $url): string
     {
-        try {
-            $request = new Request('GET', $url);
-            $response = $this->httpClient->sendRequest($request);
-        } catch (ClientExceptionInterface $e) {
-            throw new ClientException('HTTP request failed: '.$e->getMessage(), 0, $e);
-        }
-
-        $statusCode = $response->getStatusCode();
-
-        if ($statusCode === 204) {
-            return '{}';
-        }
-
-        if ($statusCode === 400) {
-            throw new ClientException('Marktplaats API returned 400 Bad Request', $statusCode);
-        }
-
-        if ($statusCode === 401 || $statusCode === 403) {
-            throw new ClientException('Marktplaats API authorization error (HTTP '.$statusCode.')', $statusCode);
-        }
-
-        if ($statusCode === 404) {
-            throw new ClientException('Marktplaats API endpoint not found (HTTP 404)', $statusCode);
-        }
-
-        if ($statusCode === 429) {
-            throw new ClientException('Marktplaats API rate limit exceeded (HTTP 429)', $statusCode);
-        }
-
-        if ($statusCode >= 500) {
-            throw new ClientException('Marktplaats API server error (HTTP '.$statusCode.')', $statusCode);
-        }
-
-        if ($statusCode !== 200) {
-            throw new ClientException('Unexpected HTTP status code: '.$statusCode, $statusCode);
-        }
-
-        return (string) $response->getBody();
-    }
-
-    private function fetchFromCache(string $key): ?SearchResult
-    {
-        if (! $this->cache instanceof CacheInterface) {
-            return null;
-        }
-
-        try {
-            /** @var array<string, mixed>|null $cached */
-            $cached = $this->cache->get($key);
-        } catch (InvalidArgumentException) {
-            return null;
-        }
-
-        if (! is_array($cached)) {
-            return null;
-        }
-
-        return SearchResult::fromArray($cached);
-    }
-
-    private function storeInCache(string $key, SearchResult $result): void
-    {
-        if (! $this->cache instanceof CacheInterface) {
-            return;
-        }
-
-        try {
-            $this->cache->set($key, $result->toArray(), $this->cacheTtl);
-        } catch (InvalidArgumentException) {
-            // Silently ignore cache write failures.
-        }
-    }
-
-    private function fetchCategoryCatalogFromCache(string $key): ?CategoryCatalog
-    {
-        if (! $this->cache instanceof CacheInterface) {
-            return null;
-        }
-
-        try {
-            /** @var array<string, mixed>|null $cached */
-            $cached = $this->cache->get($key);
-        } catch (InvalidArgumentException) {
-            return null;
-        }
-
-        if (! is_array($cached)) {
-            return null;
-        }
-
-        return CategoryCatalog::fromArray($cached);
-    }
-
-    private function storeCategoryCatalogInCache(string $key, CategoryCatalog $catalog): void
-    {
-        if (! $this->cache instanceof CacheInterface) {
-            return;
-        }
-
-        try {
-            $this->cache->set($key, $catalog->toArray(), $this->cacheTtl);
-        } catch (InvalidArgumentException) {
-            // Silently ignore cache write failures.
-        }
-    }
-
-    private function fetchFilterCatalogFromCache(string $key): ?FilterCatalog
-    {
-        if (! $this->cache instanceof CacheInterface) {
-            return null;
-        }
-
-        try {
-            /** @var array<string, mixed>|null $cached */
-            $cached = $this->cache->get($key);
-        } catch (InvalidArgumentException) {
-            return null;
-        }
-
-        if (! is_array($cached)) {
-            return null;
-        }
-
-        return FilterCatalog::fromArray($cached);
-    }
-
-    private function storeFilterCatalogInCache(string $key, FilterCatalog $catalog): void
-    {
-        if (! $this->cache instanceof CacheInterface) {
-            return;
-        }
-
-        try {
-            $this->cache->set($key, $catalog->toArray(), $this->cacheTtl);
-        } catch (InvalidArgumentException) {
-            // Silently ignore cache write failures.
-        }
+        return $this->transport->get($url);
     }
 
     private function buildListingDetailCacheKey(string $url): string
     {
         return 'marktplaats:listing:'.md5($url);
-    }
-
-    private function fetchListingDetailFromCache(string $key): ?ListingDetail
-    {
-        if (! $this->cache instanceof CacheInterface) {
-            return null;
-        }
-
-        try {
-            /** @var array<string, mixed>|null $cached */
-            $cached = $this->cache->get($key);
-        } catch (InvalidArgumentException) {
-            return null;
-        }
-
-        if (! is_array($cached)) {
-            return null;
-        }
-
-        return ListingDetail::fromArray($cached);
-    }
-
-    private function storeListingDetailInCache(string $key, ListingDetail $detail): void
-    {
-        if (! $this->cache instanceof CacheInterface) {
-            return;
-        }
-
-        try {
-            $this->cache->set($key, $detail->toArray(), $this->cacheTtl);
-        } catch (InvalidArgumentException) {
-            // Silently ignore cache write failures.
-        }
     }
 }

@@ -18,7 +18,7 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.3",
         "guzzlehttp/guzzle": "^7.0",
         "psr/simple-cache": "^3.0"
     },
@@ -26,8 +26,7 @@
         "laravel/pint": "^1.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^10.3",
-        "rector/rector": "^2.0",
-        "spatie/ray": "^1.28"
+        "rector/rector": "^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -40,9 +39,9 @@
         }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit --testsuite=Unit",
-        "test-integration": "vendor/bin/phpunit --testsuite=Integration",
-        "test-all": "vendor/bin/phpunit",
+        "test": "vendor/bin/phpunit --testsuite=Unit --no-coverage",
+        "test-integration": "vendor/bin/phpunit --testsuite=Integration --no-coverage",
+        "test-all": "vendor/bin/phpunit --no-coverage",
         "test-coverage": "vendor/bin/phpunit --testsuite=Unit --coverage",
         "format": "vendor/bin/pint",
         "analyse": "vendor/bin/phpstan analyse",

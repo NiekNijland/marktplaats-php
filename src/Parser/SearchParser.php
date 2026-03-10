@@ -25,11 +25,10 @@ use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Data\SellerInformation;
 use NiekNijland\Marktplaats\Data\SortOption;
 use NiekNijland\Marktplaats\Exception\ClientException;
+use NiekNijland\Marktplaats\Support\UrlResolver;
 
 class SearchParser
 {
-    private const string BASE_URL = 'https://www.marktplaats.nl';
-
     /**
      * @param  array<string, mixed>  $data
      */
@@ -41,13 +40,13 @@ class SearchParser
             facets: $this->parseFacets($data['facets'] ?? []),
             totalResultCount: (int) ($data['totalResultCount'] ?? 0),
             maxAllowedPageNumber: (int) ($data['maxAllowedPageNumber'] ?? 0),
-            correlationId: $data['correlationId'] ?? null,
-            originalQuery: $data['originalQuery'] ?? null,
+            correlationId: $this->toNullableString($data['correlationId'] ?? null),
+            originalQuery: $this->toNullableString($data['originalQuery'] ?? null),
             sortOptions: $this->parseSortOptions($data['sortOptions'] ?? []),
-            searchCategory: $data['searchCategory'] ?? null,
+            searchCategory: $this->toNullableInt($data['searchCategory'] ?? null),
             searchCategoryOptions: $this->parseSearchCategoryOptions($data['searchCategoryOptions'] ?? []),
-            searchRequest: isset($data['searchRequest']) ? $this->parseSearchRequest($data['searchRequest']) : null,
-            metaTags: isset($data['metaTags']) ? $this->parseMetaTags($data['metaTags']) : null,
+            searchRequest: is_array($data['searchRequest'] ?? null) ? $this->parseSearchRequest($data['searchRequest']) : null,
+            metaTags: is_array($data['metaTags'] ?? null) ? $this->parseMetaTags($data['metaTags']) : null,
         );
     }
 
@@ -68,7 +67,7 @@ class SearchParser
      */
     public function parseCategoryCatalog(array $data, int $parentCategoryId): CategoryCatalog
     {
-        $categoryOptions = $data['searchCategoryOptions'] ?? [];
+        $categoryOptions = $this->normalizeListOfArrays($data['searchCategoryOptions'] ?? []);
         $categories = [];
 
         foreach ($categoryOptions as $option) {
@@ -99,9 +98,12 @@ class SearchParser
      * @param  array<int, array<string, mixed>>  $items
      * @return Listing[]
      */
-    private function parseListings(array $items): array
+    private function parseListings(mixed $items): array
     {
-        return array_map(fn (array $item): Listing => $this->parseListing($item), $items);
+        return array_map(
+            fn (array $item): Listing => $this->parseListing($item),
+            $this->normalizeListOfArrays($items),
+        );
     }
 
     /**
@@ -109,57 +111,57 @@ class SearchParser
      */
     private function parseListing(array $item): Listing
     {
-        $vipUrl = $item['vipUrl'] ?? null;
+        $vipUrl = is_string($item['vipUrl'] ?? null) ? $item['vipUrl'] : null;
         $fullUrl = null;
 
-        if (is_string($vipUrl) && str_starts_with($vipUrl, '/')) {
-            $fullUrl = self::BASE_URL.$vipUrl;
+        if ($vipUrl !== null) {
+            $fullUrl = UrlResolver::resolveAgainstBase($vipUrl);
         }
 
         return new Listing(
             itemId: (string) ($item['itemId'] ?? ''),
             title: (string) ($item['title'] ?? ''),
-            description: $item['description'] ?? null,
-            categorySpecificDescription: $item['categorySpecificDescription'] ?? null,
-            categoryId: $item['categoryId'] ?? null,
+            description: $this->toNullableString($item['description'] ?? null),
+            categorySpecificDescription: $this->toNullableString($item['categorySpecificDescription'] ?? null),
+            categoryId: $this->toNullableInt($item['categoryId'] ?? null),
             vipUrl: $vipUrl,
             fullUrl: $fullUrl,
-            priceInfo: isset($item['priceInfo']) ? PriceInfo::fromArray($item['priceInfo']) : null,
-            location: isset($item['location']) ? Location::fromArray($item['location']) : null,
-            imageUrls: $item['imageUrls'] ?? [],
+            priceInfo: is_array($item['priceInfo'] ?? null) ? PriceInfo::fromArray($item['priceInfo']) : null,
+            location: is_array($item['location'] ?? null) ? Location::fromArray($item['location']) : null,
+            imageUrls: $this->normalizeListOfStrings($item['imageUrls'] ?? []),
             pictures: array_map(
                 fn (array $p): ListingPicture => $this->parsePicture($p),
-                $item['pictures'] ?? [],
+                $this->normalizeListOfArrays($item['pictures'] ?? []),
             ),
-            sellerInformation: isset($item['sellerInformation']) ? SellerInformation::fromArray($item['sellerInformation']) : null,
+            sellerInformation: is_array($item['sellerInformation'] ?? null) ? SellerInformation::fromArray($item['sellerInformation']) : null,
             attributes: array_map(
                 fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
-                $item['attributes'] ?? [],
+                $this->normalizeListOfArrays($item['attributes'] ?? []),
             ),
             extendedAttributes: array_map(
                 fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
-                $item['extendedAttributes'] ?? [],
+                $this->normalizeListOfArrays($item['extendedAttributes'] ?? []),
             ),
-            traits: $item['traits'] ?? [],
-            verticals: $item['verticals'] ?? [],
-            date: $item['date'] ?? null,
-            priorityProduct: $item['priorityProduct'] ?? null,
+            traits: $this->normalizeListOfStrings($item['traits'] ?? []),
+            verticals: $this->normalizeListOfStrings($item['verticals'] ?? []),
+            date: $this->toNullableString($item['date'] ?? null),
+            priorityProduct: $this->toNullableString($item['priorityProduct'] ?? null),
             reserved: (bool) ($item['reserved'] ?? false),
-            searchType: $item['searchType'] ?? null,
+            searchType: $this->toNullableString($item['searchType'] ?? null),
             thinContent: (bool) ($item['thinContent'] ?? false),
             videoOnVip: (bool) ($item['videoOnVip'] ?? false),
             urgencyFeatureActive: (bool) ($item['urgencyFeatureActive'] ?? false),
             napAvailable: (bool) ($item['napAvailable'] ?? false),
-            trackingData: $item['trackingData'] ?? null,
-            pageLocation: $item['pageLocation'] ?? null,
-            opvalStickerText: $item['opvalStickerText'] ?? null,
+            trackingData: $this->toNullableString($item['trackingData'] ?? null),
+            pageLocation: $this->toNullableString($item['pageLocation'] ?? null),
+            opvalStickerText: $this->toNullableString($item['opvalStickerText'] ?? null),
             highlights: array_map(
                 fn (array $h): ListingHighlight => ListingHighlight::fromArray($h),
-                $item['highlights'] ?? [],
+                $this->normalizeListOfArrays($item['highlights'] ?? []),
             ),
             trustIndicators: array_map(
                 fn (array $t): ListingTrustIndicator => ListingTrustIndicator::fromArray($t),
-                $item['trustIndicators'] ?? [],
+                $this->normalizeListOfArrays($item['trustIndicators'] ?? []),
             ),
         );
     }
@@ -179,14 +181,14 @@ class SearchParser
         }
 
         return new ListingPicture(
-            id: $data['id'] ?? null,
-            mediaId: $data['mediaId'] ?? null,
-            url: $data['url'] ?? null,
-            extraSmallUrl: $data['extraSmallUrl'] ?? null,
-            mediumUrl: $data['mediumUrl'] ?? null,
-            largeUrl: $data['largeUrl'] ?? null,
-            extraExtraLargeUrl: $data['extraExtraLargeUrl'] ?? null,
-            sizes: $data['sizes'] ?? [],
+            id: $this->toNullableInt($data['id'] ?? null),
+            mediaId: $this->toNullableString($data['mediaId'] ?? null),
+            url: $this->toNullableString($data['url'] ?? null),
+            extraSmallUrl: $this->toNullableString($data['extraSmallUrl'] ?? null),
+            mediumUrl: $this->toNullableString($data['mediumUrl'] ?? null),
+            largeUrl: $this->toNullableString($data['largeUrl'] ?? null),
+            extraExtraLargeUrl: $this->toNullableString($data['extraExtraLargeUrl'] ?? null),
+            sizes: $this->normalizeStringMap($data['sizes'] ?? []),
             aspectRatio: $aspectRatio,
         );
     }
@@ -195,9 +197,12 @@ class SearchParser
      * @param  array<int, array<string, mixed>>  $items
      * @return SearchFacet[]
      */
-    private function parseFacets(array $items): array
+    private function parseFacets(mixed $items): array
     {
-        return array_map(fn (array $item): SearchFacet => $this->parseFacet($item), $items);
+        return array_map(
+            fn (array $item): SearchFacet => $this->parseFacet($item),
+            $this->normalizeListOfArrays($items),
+        );
     }
 
     /**
@@ -206,19 +211,19 @@ class SearchParser
     private function parseFacet(array $item): SearchFacet
     {
         return new SearchFacet(
-            id: $item['id'] ?? null,
-            key: $item['key'] ?? null,
-            type: $item['type'] ?? null,
-            label: $item['label'] ?? null,
-            singleSelect: $item['singleSelect'] ?? null,
-            categoryId: $item['categoryId'] ?? null,
+            id: $this->toNullableInt($item['id'] ?? null),
+            key: $this->toNullableString($item['key'] ?? null),
+            type: $this->toNullableString($item['type'] ?? null),
+            label: $this->toNullableString($item['label'] ?? null),
+            singleSelect: is_bool($item['singleSelect'] ?? null) ? $item['singleSelect'] : null,
+            categoryId: $this->toNullableInt($item['categoryId'] ?? null),
             categories: array_map(
                 fn (array $c): SearchFacetCategory => SearchFacetCategory::fromArray($c),
-                $item['categories'] ?? [],
+                $this->normalizeListOfArrays($item['categories'] ?? []),
             ),
             attributeGroup: array_map(
                 fn (array $o): SearchFacetAttributeGroupOption => SearchFacetAttributeGroupOption::fromArray($o),
-                $item['attributeGroup'] ?? [],
+                $this->normalizeListOfArrays($item['attributeGroup'] ?? []),
             ),
         );
     }
@@ -227,21 +232,26 @@ class SearchParser
      * @param  array<int, array<string, mixed>>  $items
      * @return SortOption[]
      */
-    private function parseSortOptions(array $items): array
+    private function parseSortOptions(mixed $items): array
     {
-        return array_map(fn (array $item): SortOption => SortOption::fromArray($item), $items);
+        return array_map(
+            fn (array $item): SortOption => SortOption::fromArray($item),
+            $this->normalizeListOfArrays($items),
+        );
     }
 
     /**
      * @param  list<array<string, mixed>>  $items
      * @return Category[]
      */
-    private function parseSearchCategoryOptions(array $items): array
+    private function parseSearchCategoryOptions(mixed $items): array
     {
+        $normalized = $this->normalizeListOfArrays($items);
+
         return array_map(
             /** @param array<string, mixed> $item */
             fn (array $item): Category => Category::fromArray(['id' => (int) ($item['id'] ?? 0)] + $item),
-            $items,
+            $normalized,
         );
     }
 
@@ -259,9 +269,87 @@ class SearchParser
     private function parseMetaTags(array $data): SearchMetaTags
     {
         return new SearchMetaTags(
-            metaTitle: $data['metaTitle'] ?? null,
-            metaDescription: $data['metaDescription'] ?? null,
-            pageTitleH1: $data['pageTitleH1'] ?? null,
+            metaTitle: $this->toNullableString($data['metaTitle'] ?? null),
+            metaDescription: $this->toNullableString($data['metaDescription'] ?? null),
+            pageTitleH1: $this->toNullableString($data['pageTitleH1'] ?? null),
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function normalizeListOfArrays(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_array($item),
+        ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizeListOfStrings(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_string($item),
+        ));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function normalizeStringMap(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($value as $key => $mapValue) {
+            if (! is_string($key) || ! is_string($mapValue)) {
+                continue;
+            }
+
+            $result[$key] = $mapValue;
+        }
+
+        return $result;
+    }
+
+    private function toNullableInt(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && is_numeric($value)) {
+            return (int) $value;
+        }
+
+        return null;
+    }
+
+    private function toNullableString(mixed $value): ?string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return null;
     }
 }

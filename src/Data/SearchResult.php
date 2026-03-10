@@ -115,13 +115,23 @@ readonly class SearchResult
             return $this;
         }
 
-        $filteredListings = array_values(array_filter(
-            $this->listings,
-            fn (Listing $listing): bool => $listing->categoryId === null
-                || ! in_array($listing->categoryId, $excludedCategoryIds, true),
-        ));
+        $filter = static fn (Listing $listing): bool => $listing->categoryId === null
+            || ! in_array($listing->categoryId, $excludedCategoryIds, true);
 
-        return $this->withListings($filteredListings);
+        return new self(
+            listings: array_values(array_filter($this->listings, $filter)),
+            topBlock: array_values(array_filter($this->topBlock, $filter)),
+            facets: $this->facets,
+            totalResultCount: $this->totalResultCount,
+            maxAllowedPageNumber: $this->maxAllowedPageNumber,
+            correlationId: $this->correlationId,
+            originalQuery: $this->originalQuery,
+            sortOptions: $this->sortOptions,
+            searchCategory: $this->searchCategory,
+            searchCategoryOptions: $this->searchCategoryOptions,
+            searchRequest: $this->searchRequest,
+            metaTags: $this->metaTags,
+        );
     }
 
     public static function empty(): self

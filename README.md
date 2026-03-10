@@ -4,7 +4,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/nieknijland/marktplaats-php/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/nieknijland/marktplaats-php/actions/workflows/run-tests.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/nieknijland/marktplaats-php.svg?style=flat-square)](https://packagist.org/packages/nieknijland/marktplaats-php)
 
-PHP client for fetching Marktplaats listings programmatically. Returns strongly typed immutable DTOs. Motorcycle-first defaults with generic architecture for all categories.
+PHP client for fetching Marktplaats listings programmatically. Returns strongly typed immutable DTOs for search and listing detail pages.
 
 ## Installation
 
@@ -21,8 +21,7 @@ use NiekNijland\Marktplaats\Data\SearchQuery;
 $client = new Client();
 
 $result = $client->getSearch(new SearchQuery(
-    query: 'honda cbr',
-    l1CategoryId: 678,
+    query: 'bureau',
 ));
 
 foreach ($result->listings as $listing) {

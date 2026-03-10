@@ -13,7 +13,7 @@ use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Exception\ClientException;
-use PHPUnit\Framework\Assert;
+use RuntimeException;
 
 class FakeClient implements ClientInterface
 {
@@ -159,37 +159,34 @@ class FakeClient implements ClientInterface
 
     public function assertCalled(string $method): void
     {
-        $calls = array_filter(
-            $this->recordedCalls,
-            fn (RecordedCall $call): bool => $call->method === $method,
-        );
-
-        Assert::assertNotEmpty($calls, "Expected method [{$method}] to have been called, but it was not.");
+        if ($this->countCalls($method) < 1) {
+            throw new RuntimeException("Expected method [{$method}] to have been called, but it was not.");
+        }
     }
 
     public function assertNotCalled(string $method): void
     {
-        $calls = array_filter(
-            $this->recordedCalls,
-            fn (RecordedCall $call): bool => $call->method === $method,
-        );
-
-        Assert::assertEmpty($calls, "Expected method [{$method}] to not have been called, but it was.");
+        if ($this->countCalls($method) > 0) {
+            throw new RuntimeException("Expected method [{$method}] to not have been called, but it was.");
+        }
     }
 
     public function assertCalledTimes(string $method, int $times): void
     {
-        $calls = array_filter(
+        $actual = $this->countCalls($method);
+
+        if ($actual !== $times) {
+            throw new RuntimeException(
+                "Expected method [{$method}] to have been called {$times} time(s), but it was called {$actual} time(s).",
+            );
+        }
+    }
+
+    private function countCalls(string $method): int
+    {
+        return count(array_filter(
             $this->recordedCalls,
             fn (RecordedCall $call): bool => $call->method === $method,
-        );
-
-        $actual = count($calls);
-
-        Assert::assertSame(
-            $times,
-            $actual,
-            "Expected method [{$method}] to have been called {$times} time(s), but it was called {$actual} time(s).",
-        );
+        ));
     }
 }

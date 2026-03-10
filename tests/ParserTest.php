@@ -216,6 +216,27 @@ class ParserTest extends TestCase
         $this->parser->parseJson('not valid json');
     }
 
+    public function test_parse_json_with_unexpected_shapes_does_not_throw_type_error(): void
+    {
+        $json = json_encode([
+            'listings' => ['invalid'],
+            'topBlock' => 'invalid',
+            'facets' => [123, ['id' => 'abc']],
+            'searchCategoryOptions' => [null, ['id' => '696', 'key' => 'honda']],
+            'searchRequest' => 'invalid',
+            'metaTags' => 'invalid',
+        ], JSON_THROW_ON_ERROR);
+
+        $result = $this->parser->parseJson($json);
+
+        $this->assertSame([], $result->listings);
+        $this->assertSame([], $result->topBlock);
+        $this->assertCount(1, $result->facets);
+        $this->assertCount(1, $result->searchCategoryOptions);
+        $this->assertNull($result->searchRequest);
+        $this->assertNull($result->metaTags);
+    }
+
     public function test_parse_category_catalog(): void
     {
         $json = $this->loadFixture('search-motorcycle-brand-catalog.json');

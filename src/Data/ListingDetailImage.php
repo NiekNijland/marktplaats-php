@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Data;
 
+use NiekNijland\Marktplaats\Support\UrlResolver;
+
 readonly class ListingDetailImage
 {
-    private const string BASE_URL = 'https://www.marktplaats.nl';
-
     public function __construct(
         public string $mediaId,
         public ?string $baseUrl = null,
@@ -49,19 +49,9 @@ readonly class ListingDetailImage
             return null;
         }
 
-        if (str_starts_with($this->baseUrl, 'http://') || str_starts_with($this->baseUrl, 'https://')) {
-            return $this->baseUrl;
-        }
-
-        if (str_starts_with($this->baseUrl, '//')) {
-            return 'https:'.$this->baseUrl;
-        }
-
-        if (str_starts_with($this->baseUrl, '/')) {
-            return self::BASE_URL.$this->baseUrl;
-        }
-
-        return self::BASE_URL.'/'.$this->baseUrl;
+        return UrlResolver::resolveAgainstBase(
+            UrlResolver::resolveProtocolRelative($this->baseUrl),
+        );
     }
 
     /**

@@ -238,6 +238,59 @@ class ListingDetailParserTest extends TestCase
         $this->parser->parseHtml($html, '/v/test');
     }
 
+    public function test_parse_html_with_unexpected_listing_shapes_does_not_throw_type_error(): void
+    {
+        $html = '<script>window.__CONFIG__ = '.json_encode([
+            'listing' => [
+                'itemId' => 123,
+                'title' => true,
+                'adType' => ['invalid'],
+                'priceInfo' => 'invalid',
+                'seller' => 'invalid',
+                'category' => 'invalid',
+                'stats' => 'invalid',
+                'bidsInfo' => 'invalid',
+                'shippingInformation' => 'invalid',
+                'traits' => 'invalid',
+                'flags' => 'invalid',
+                'gallery' => 'invalid',
+            ],
+        ], JSON_THROW_ON_ERROR).';</script>';
+
+        $detail = $this->parser->parseHtml($html, '/v/test');
+
+        $this->assertSame('123', $detail->itemId);
+        $this->assertSame('1', $detail->title);
+        $this->assertNull($detail->adType);
+        $this->assertNull($detail->priceInfo);
+        $this->assertNull($detail->seller);
+        $this->assertNull($detail->category);
+        $this->assertNull($detail->stats);
+        $this->assertNull($detail->bidsInfo);
+        $this->assertNull($detail->shipping);
+        $this->assertSame([], $detail->traits);
+        $this->assertSame([], $detail->images);
+        $this->assertFalse($detail->shippable);
+    }
+
+    public function test_extract_config_json_handles_multiline_script_block(): void
+    {
+        $html = <<<'HTML'
+<script>
+window.__CONFIG__ = {
+  "listing": {
+    "itemId": "m1",
+    "title": "Test"
+  }
+};
+</script>
+HTML;
+
+        $config = $this->parser->extractConfigJson($html);
+
+        $this->assertSame('m1', $config['listing']['itemId']);
+    }
+
     public function test_listing_detail_to_array_from_array_roundtrip(): void
     {
         $detail = $this->parser->parseHtml($this->fixtureHtml, '/v/test');

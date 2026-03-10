@@ -6,6 +6,8 @@ namespace NiekNijland\Marktplaats\Tests;
 
 use NiekNijland\Marktplaats\Data\Category;
 use NiekNijland\Marktplaats\Data\Enums\PriceType;
+use NiekNijland\Marktplaats\Data\Enums\SearchFacetType;
+use NiekNijland\Marktplaats\Data\Enums\SortBy;
 use NiekNijland\Marktplaats\Data\SearchResult;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Parser\SearchParser;
@@ -131,7 +133,7 @@ class ParserTest extends TestCase
         $result = $this->parser->parseJson($json);
 
         $categoryFacet = $result->facets[0];
-        $this->assertSame('CategoryTreeFacet', $categoryFacet->type);
+        $this->assertSame(SearchFacetType::CATEGORY_TREE, $categoryFacet->type);
         $this->assertCount(2, $categoryFacet->categories);
         $this->assertSame(696, $categoryFacet->categories[0]->id);
         $this->assertSame('Honda', $categoryFacet->categories[0]->label);
@@ -143,7 +145,7 @@ class ParserTest extends TestCase
         $result = $this->parser->parseJson($json);
 
         $attrGroupFacet = $result->facets[2];
-        $this->assertSame('AttributeGroupFacet', $attrGroupFacet->type);
+        $this->assertSame(SearchFacetType::ATTRIBUTE_GROUP, $attrGroupFacet->type);
         $this->assertCount(1, $attrGroupFacet->attributeGroup);
         $this->assertSame('honda', $attrGroupFacet->attributeGroup[0]->attributeValueKey);
     }
@@ -176,7 +178,7 @@ class ParserTest extends TestCase
         $this->assertNotNull($result->searchRequest);
         $this->assertSame(678, $result->searchRequest->categories->category?->id);
         $this->assertSame('motoren', $result->searchRequest->categories->category?->key);
-        $this->assertSame('SORT_INDEX', $result->searchRequest->sortOptions->sortBy);
+        $this->assertSame(SortBy::SORT_INDEX, $result->searchRequest->sortOptions->sortBy);
     }
 
     public function test_parse_meta_tags(): void

@@ -57,31 +57,31 @@ readonly class SearchResult
         return new self(
             listings: array_map(
                 fn (array $l): Listing => Listing::fromArray($l),
-                $data['listings'] ?? [],
+                self::normalizeListOfArrays($data['listings'] ?? []),
             ),
             topBlock: array_map(
                 fn (array $l): Listing => Listing::fromArray($l),
-                $data['topBlock'] ?? [],
+                self::normalizeListOfArrays($data['topBlock'] ?? []),
             ),
             facets: array_map(
                 fn (array $f): SearchFacet => SearchFacet::fromArray($f),
-                $data['facets'] ?? [],
+                self::normalizeListOfArrays($data['facets'] ?? []),
             ),
-            totalResultCount: $data['totalResultCount'] ?? 0,
-            maxAllowedPageNumber: $data['maxAllowedPageNumber'] ?? 0,
-            correlationId: $data['correlationId'] ?? null,
-            originalQuery: $data['originalQuery'] ?? null,
+            totalResultCount: isset($data['totalResultCount']) ? (int) $data['totalResultCount'] : 0,
+            maxAllowedPageNumber: isset($data['maxAllowedPageNumber']) ? (int) $data['maxAllowedPageNumber'] : 0,
+            correlationId: is_string($data['correlationId'] ?? null) ? $data['correlationId'] : null,
+            originalQuery: is_string($data['originalQuery'] ?? null) ? $data['originalQuery'] : null,
             sortOptions: array_map(
                 fn (array $s): SortOption => SortOption::fromArray($s),
-                $data['sortOptions'] ?? [],
+                self::normalizeListOfArrays($data['sortOptions'] ?? []),
             ),
-            searchCategory: $data['searchCategory'] ?? null,
+            searchCategory: isset($data['searchCategory']) ? (int) $data['searchCategory'] : null,
             searchCategoryOptions: array_map(
                 fn (array $o): Category => Category::fromArray(['id' => (int) ($o['id'] ?? 0)] + $o),
-                $data['searchCategoryOptions'] ?? [],
+                self::normalizeListOfArrays($data['searchCategoryOptions'] ?? []),
             ),
-            searchRequest: isset($data['searchRequest']) ? SearchRequest::fromArray($data['searchRequest']) : null,
-            metaTags: isset($data['metaTags']) ? SearchMetaTags::fromArray($data['metaTags']) : null,
+            searchRequest: is_array($data['searchRequest'] ?? null) ? SearchRequest::fromArray($data['searchRequest']) : null,
+            metaTags: is_array($data['metaTags'] ?? null) ? SearchMetaTags::fromArray($data['metaTags']) : null,
         );
     }
 
@@ -150,5 +150,20 @@ readonly class SearchResult
             searchRequest: null,
             metaTags: null,
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function normalizeListOfArrays(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_array($item),
+        ));
     }
 }

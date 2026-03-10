@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Tests;
 
+use NiekNijland\Marktplaats\Data\Enums\SearchFacetType;
 use NiekNijland\Marktplaats\Data\FilterCatalog;
 use NiekNijland\Marktplaats\Testing\FilterCatalogFactory;
 use PHPUnit\Framework\TestCase;
@@ -17,7 +18,7 @@ class FilterCatalogTest extends TestCase
         $facet = $catalog->findByKey('brand');
 
         $this->assertNotNull($facet);
-        $this->assertSame('AttributeGroupFacet', $facet->type);
+        $this->assertSame(SearchFacetType::ATTRIBUTE_GROUP, $facet->type);
     }
 
     public function test_get_range_and_group_facets(): void

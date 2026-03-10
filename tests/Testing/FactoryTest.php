@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Tests\Testing;
 
+use NiekNijland\Marktplaats\Data\Enums\ListingAdType;
 use NiekNijland\Marktplaats\Data\Enums\PriceType;
 use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Testing\CategoryCatalogFactory;
@@ -24,8 +25,8 @@ class FactoryTest extends TestCase
         $listing = ListingFactory::make();
 
         $this->assertNotEmpty($listing->itemId);
-        $this->assertSame('Test Motorcycle Listing', $listing->title);
-        $this->assertSame(696, $listing->categoryId);
+        $this->assertSame('Test Desk Listing', $listing->title);
+        $this->assertSame(51, $listing->categoryId);
         $this->assertNotNull($listing->fullUrl);
     }
 
@@ -76,16 +77,16 @@ class FactoryTest extends TestCase
     {
         $category = CategoryFactory::make();
 
-        $this->assertSame(696, $category->id);
-        $this->assertSame('Honda', $category->name);
-        $this->assertSame(678, $category->parentId);
+        $this->assertSame(51, $category->id);
+        $this->assertSame('Bureaus', $category->name);
+        $this->assertSame(15, $category->parentId);
     }
 
     public function test_category_catalog_factory(): void
     {
         $catalog = CategoryCatalogFactory::make();
 
-        $this->assertSame(678, $catalog->parentCategoryId);
+        $this->assertSame(15, $catalog->parentCategoryId);
         $this->assertCount(3, $catalog->categories);
     }
 
@@ -109,7 +110,7 @@ class FactoryTest extends TestCase
     {
         $catalog = FilterCatalogFactory::make();
 
-        $this->assertSame(678, $catalog->categoryId);
+        $this->assertSame(15, $catalog->categoryId);
         $this->assertNotEmpty($catalog->getRangeFacets());
         $this->assertNotEmpty($catalog->getGroupFacets());
     }
@@ -121,13 +122,13 @@ class FactoryTest extends TestCase
         $this->assertNotEmpty($detail->itemId);
         $this->assertSame('Test Listing Detail', $detail->title);
         $this->assertSame('A detailed description of the listing.', $detail->description);
-        $this->assertSame('OFFERED', $detail->adType);
+        $this->assertSame(ListingAdType::REGULAR_PAID, $detail->adType);
         $this->assertNotNull($detail->priceInfo);
         $this->assertSame(450000, $detail->priceInfo->priceCents);
         $this->assertNotNull($detail->seller);
         $this->assertSame('Test Seller', $detail->seller->name);
         $this->assertNotNull($detail->category);
-        $this->assertSame(696, $detail->category->id);
+        $this->assertSame(51, $detail->category->id);
         $this->assertNotNull($detail->stats);
         $this->assertSame(150, $detail->stats->viewCount);
         $this->assertSame(['XL' => '84', 'M' => '82'], $detail->imageSizes);

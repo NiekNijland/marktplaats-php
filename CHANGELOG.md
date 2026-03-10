@@ -15,6 +15,11 @@ All notable changes to `marktplaats-php` will be documented in this file.
 - Applied excluded category filtering to both search `listings` and `topBlock`.
 - Reworked listing-detail parsing to use DOM-based extraction for description/attributes.
 - Added shared URL resolver utility.
+- Renamed query field `postalcode` to `postalCode`.
+- Added typed enums for listing ad type, seller type, and facet type.
+- Added deduplication in `getSearchAll()` for unstable pagination overlap.
+- Hardened `fromArray()` hydration for cached/malformed payload safety.
+- Generalized docs and shipped testing factory defaults beyond motorcycle-specific examples.
 
 ### Tooling
 
@@ -25,3 +30,7 @@ All notable changes to `marktplaats-php` will be documented in this file.
 ### Breaking
 
 - `SearchQuery::$offerType` now expects `?OfferType` instead of `?string`.
+- `SearchQuery` and `SearchQueryBuilder` now use `postalCode` instead of `postalcode`.
+- `ListingDetail::$adType` now uses `?ListingAdType` and keeps unknown values in `rawAdType`.
+- `ListingDetailSeller::$sellerType` now uses `?SellerType` and keeps unknown values in `rawSellerType`.
+- `SearchFacet::$type` now uses `?SearchFacetType` and keeps unknown values in `rawType`.

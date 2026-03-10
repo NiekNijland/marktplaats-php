@@ -27,10 +27,10 @@ $fake->assertCalledTimes('getSearch', 1);
 
 // Seed listing detail pages
 $fake->seedListingDetail(ListingDetailFactory::make([
-    'title' => 'Honda CBR 600RR',
+    'title' => 'Vintage Oak Desk',
 ]));
 
-$detail = $fake->getListing('/v/motoren/honda/m123');
+$detail = $fake->getListing('/v/huis-en-inrichting/bureaus/m123');
 $fake->assertCalled('getListing');
 ```
 

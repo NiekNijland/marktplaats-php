@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use JsonException;
 use NiekNijland\Marktplaats\Data\Category;
 use NiekNijland\Marktplaats\Data\CategoryCatalog;
+use NiekNijland\Marktplaats\Data\Enums\SearchFacetType;
 use NiekNijland\Marktplaats\Data\Listing;
 use NiekNijland\Marktplaats\Data\ListingAttribute;
 use NiekNijland\Marktplaats\Data\ListingHighlight;
@@ -210,10 +211,13 @@ class SearchParser
      */
     private function parseFacet(array $item): SearchFacet
     {
+        $rawType = $this->toNullableString($item['type'] ?? null);
+
         return new SearchFacet(
             id: $this->toNullableInt($item['id'] ?? null),
             key: $this->toNullableString($item['key'] ?? null),
-            type: $this->toNullableString($item['type'] ?? null),
+            type: $rawType !== null ? SearchFacetType::tryFrom($rawType) : null,
+            rawType: $rawType,
             label: $this->toNullableString($item['label'] ?? null),
             singleSelect: is_bool($item['singleSelect'] ?? null) ? $item['singleSelect'] : null,
             categoryId: $this->toNullableInt($item['categoryId'] ?? null),

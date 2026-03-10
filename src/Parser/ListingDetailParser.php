@@ -9,6 +9,7 @@ use DOMElement;
 use DOMNode;
 use DOMXPath;
 use JsonException;
+use NiekNijland\Marktplaats\Data\Enums\ListingAdType;
 use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\ListingDetailAttribute;
 use NiekNijland\Marktplaats\Data\ListingDetailBidsInfo;
@@ -59,12 +60,14 @@ class ListingDetailParser
         $stats = is_array($data['stats'] ?? null) ? ListingDetailStats::fromArray($data['stats']) : null;
         $bidsInfo = is_array($data['bidsInfo'] ?? null) ? ListingDetailBidsInfo::fromArray($data['bidsInfo']) : null;
         $shipping = is_array($data['shippingInformation'] ?? null) ? ListingDetailShipping::fromArray($data['shippingInformation']) : null;
+        $rawAdType = $this->toNullableString($data['adType'] ?? null);
 
         return new ListingDetail(
             itemId: (string) ($data['itemId'] ?? ''),
             title: (string) ($data['title'] ?? ''),
             description: $description,
-            adType: $this->toNullableString($data['adType'] ?? null),
+            adType: $rawAdType !== null ? ListingAdType::tryFrom($rawAdType) : null,
+            rawAdType: $rawAdType,
             priceInfo: $priceInfo,
             seller: $seller,
             category: $category,

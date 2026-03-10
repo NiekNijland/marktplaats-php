@@ -6,7 +6,7 @@
         "scraper",
         "search",
         "listings",
-        "motorcycles"
+        "marketplace"
     ],
     "homepage": "https://github.com/nieknijland/marktplaats-php",
     "license": "MIT",

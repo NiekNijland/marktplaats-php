@@ -38,13 +38,13 @@ readonly class SellerInformation
     public static function fromArray(array $data): self
     {
         return new self(
-            sellerId: $data['sellerId'] ?? null,
-            sellerName: $data['sellerName'] ?? null,
-            showSoiUrl: $data['showSoiUrl'] ?? false,
-            showWebsiteUrl: $data['showWebsiteUrl'] ?? false,
-            sellerWebsiteUrl: $data['sellerWebsiteUrl'] ?? null,
-            sellerLogoUrl: $data['sellerLogoUrl'] ?? null,
-            isVerified: $data['isVerified'] ?? false,
+            sellerId: isset($data['sellerId']) ? (int) $data['sellerId'] : null,
+            sellerName: is_string($data['sellerName'] ?? null) ? $data['sellerName'] : null,
+            showSoiUrl: (bool) ($data['showSoiUrl'] ?? false),
+            showWebsiteUrl: (bool) ($data['showWebsiteUrl'] ?? false),
+            sellerWebsiteUrl: is_string($data['sellerWebsiteUrl'] ?? null) ? $data['sellerWebsiteUrl'] : null,
+            sellerLogoUrl: is_string($data['sellerLogoUrl'] ?? null) ? $data['sellerLogoUrl'] : null,
+            isVerified: (bool) ($data['isVerified'] ?? false),
         );
     }
 }

@@ -35,14 +35,16 @@ readonly class SearchRequest
      */
     public static function fromArray(array $data, bool $isNested = false): self
     {
+        $originalRequest = is_array($data['originalRequest'] ?? null) ? $data['originalRequest'] : null;
+
         return new self(
-            searchQuery: $data['searchQuery'] ?? null,
-            categories: SearchRequestCategories::fromArray($data['categories'] ?? []),
-            sortOptions: SearchRequestSortOptions::fromArray($data['sortOptions'] ?? []),
-            pagination: SearchRequestPagination::fromArray($data['pagination'] ?? []),
-            viewOptions: SearchRequestViewOptions::fromArray($data['viewOptions'] ?? []),
-            originalRequest: ! $isNested && isset($data['originalRequest'])
-                ? self::fromArray($data['originalRequest'], isNested: true)
+            searchQuery: is_string($data['searchQuery'] ?? null) ? $data['searchQuery'] : null,
+            categories: SearchRequestCategories::fromArray(is_array($data['categories'] ?? null) ? $data['categories'] : []),
+            sortOptions: SearchRequestSortOptions::fromArray(is_array($data['sortOptions'] ?? null) ? $data['sortOptions'] : []),
+            pagination: SearchRequestPagination::fromArray(is_array($data['pagination'] ?? null) ? $data['pagination'] : []),
+            viewOptions: SearchRequestViewOptions::fromArray(is_array($data['viewOptions'] ?? null) ? $data['viewOptions'] : []),
+            originalRequest: ! $isNested && $originalRequest !== null
+                ? self::fromArray($originalRequest, isNested: true)
                 : null,
         );
     }

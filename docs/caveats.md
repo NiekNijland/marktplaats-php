@@ -2,42 +2,39 @@
 
 ## Keyword-stuffed titles
 
-Marktplaats search is text-based. Sellers frequently add related model numbers to titles to appear in more searches (e.g. a GSX-R 600 listed as `"SUZUKI GSX-R 600 SCORPION GSXR GSXR600 750 1000"`). The package returns exactly what the API returns.
+Marktplaats search is text-based. Sellers frequently add loosely related terms and model numbers to titles to appear in more searches. The package returns exactly what the API returns.
 
-To verify actual engine displacement, check:
-
-- **Search results**: the `engineDisplacement` extended attribute (present on some listings)
-- **Detail pages**: the `Motorinhoud` attribute (e.g. `"599 cc"`, `"999 cc"`)
+If you need stricter matching, prefer validating with listing attributes instead of title text.
 
 ```php
-// Filter search results by engine displacement
+// Filter search results by brand attribute instead of title text
 $filtered = array_filter($result->listings, function ($listing) {
     foreach ($listing->extendedAttributes as $attr) {
-        if ($attr->key === 'engineDisplacement') {
-            return str_contains($attr->value, '999') || str_contains($attr->value, '998');
+        if ($attr->key === 'brand') {
+            return strcasecmp($attr->value, 'IKEA') === 0;
         }
     }
-    return true; // keep listings without displacement info
+    return true; // keep listings without brand info
 });
 
-// Or verify via detail page
+// Or verify via detail page attributes
 $detail = $client->getListing($listing->vipUrl);
 foreach ($detail->attributes as $attr) {
-    if ($attr->label === 'Motorinhoud') {
-        echo $attr->value; // "999 cc"
+    if ($attr->label === 'Merk') {
+        echo $attr->value;
     }
 }
 ```
 
-## Lease prices in results
+## Installment-like prices in results
 
-Some dealer listings show monthly lease amounts instead of the full sale price while using `priceType: FIXED`. For example, a motorcycle may appear with `priceCents: 16075` (EUR 160.75/month) rather than the actual vehicle price.
+Some listings show monthly amounts instead of full item prices while still using `priceType: FIXED`.
 
 These listings are typically recognizable by:
 
-- Unusually low price relative to the vehicle category
-- Lease-related keywords in the title or description (`"lease"`, `"p/m"`, `"per maand"`)
-- Seller type `TRADER` (dealer)
+- Unusually low price relative to comparable listings
+- Installment-related keywords in title or description (`"lease"`, `"p/m"`, `"per maand"`)
+- Seller type `TRADER`
 
 The package returns raw API data without modification. Apply your own filtering logic if needed:
 

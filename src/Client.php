@@ -99,6 +99,7 @@ class Client implements ClientInterface
         $offset = $query->offset;
         $yieldedIndex = 0;
         $previousItemIds = [];
+        $seenItemIds = [];
         $maxIterations = 1000;
         $iteration = 0;
 
@@ -125,6 +126,11 @@ class Client implements ClientInterface
             $previousItemIds = $currentItemIds;
 
             foreach ($filteredResult->listings as $listing) {
+                if (isset($seenItemIds[$listing->itemId])) {
+                    continue;
+                }
+
+                $seenItemIds[$listing->itemId] = true;
                 yield $yieldedIndex => $listing;
                 $yieldedIndex++;
             }

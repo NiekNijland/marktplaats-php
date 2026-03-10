@@ -29,7 +29,7 @@ class SearchQueryBuilder
 
     private ViewOptionKind $viewOptions = ViewOptionKind::GALLERY_VIEW;
 
-    private ?string $postalcode = null;
+    private ?string $postalCode = null;
 
     private ?int $distanceMeters = null;
 
@@ -107,9 +107,9 @@ class SearchQueryBuilder
         return $this;
     }
 
-    public function postalcode(?string $postalcode): self
+    public function postalCode(?string $postalCode): self
     {
-        $this->postalcode = $postalcode;
+        $this->postalCode = $postalCode;
 
         return $this;
     }
@@ -191,7 +191,7 @@ class SearchQueryBuilder
             sortOrder: $this->sortOrder,
             searchInTitleAndDescription: $this->searchInTitleAndDescription,
             viewOptions: $this->viewOptions,
-            postalcode: $this->postalcode,
+            postalCode: $this->postalCode,
             distanceMeters: $this->distanceMeters,
             offerType: $this->offerType,
             attributeRanges: $this->attributeRanges,

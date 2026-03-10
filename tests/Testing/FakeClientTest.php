@@ -123,9 +123,9 @@ class FakeClientTest extends TestCase
         $fake = new FakeClient;
         $fake->seedCategoryCatalog($catalog);
 
-        $result = $fake->getCategoryCatalog(678);
+        $result = $fake->getCategoryCatalog(15);
 
-        $this->assertSame(678, $result->parentCategoryId);
+        $this->assertSame(15, $result->parentCategoryId);
         $this->assertNotEmpty($result->categories);
     }
 
@@ -136,7 +136,7 @@ class FakeClientTest extends TestCase
         $this->expectException(ClientException::class);
         $this->expectExceptionMessage('No category catalog seeded');
 
-        $fake->getCategoryCatalog(678);
+        $fake->getCategoryCatalog(15);
     }
 
     public function test_fake_filter_catalog(): void
@@ -145,9 +145,9 @@ class FakeClientTest extends TestCase
         $fake = new FakeClient;
         $fake->seedFilterCatalog($catalog);
 
-        $result = $fake->getFilterCatalog(678);
+        $result = $fake->getFilterCatalog(15);
 
-        $this->assertSame(678, $result->categoryId);
+        $this->assertSame(15, $result->categoryId);
         $this->assertNotEmpty($result->facets);
         $fake->assertCalled('getFilterCatalog');
     }
@@ -159,7 +159,7 @@ class FakeClientTest extends TestCase
         $this->expectException(ClientException::class);
         $this->expectExceptionMessage('No filter catalog seeded');
 
-        $fake->getFilterCatalog(678);
+        $fake->getFilterCatalog(15);
     }
 
     public function test_fake_get_search_all(): void

@@ -9,12 +9,12 @@ use NiekNijland\Marktplaats\Data\Category;
 class CategoryFactory
 {
     public static function make(
-        int $id = 696,
-        ?string $key = 'honda',
-        ?string $name = 'Honda',
-        ?string $fullName = 'Motoren | Honda',
-        ?int $parentId = 678,
-        ?string $parentKey = 'motoren',
+        int $id = 51,
+        ?string $key = 'bureaus',
+        ?string $name = 'Bureaus',
+        ?string $fullName = 'Huis en Inrichting | Bureaus',
+        ?int $parentId = 15,
+        ?string $parentKey = 'huis-en-inrichting',
     ): Category {
         return new Category(
             id: $id,

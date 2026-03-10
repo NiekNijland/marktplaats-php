@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Data;
 
+use NiekNijland\Marktplaats\Data\Enums\ViewOptionKind;
+
 readonly class SearchRequestViewOptions
 {
     public function __construct(
-        public ?string $viewOptions,
+        public ?ViewOptionKind $viewOptions,
+        public ?string $rawViewOptions = null,
     ) {}
 
     /**
@@ -16,7 +19,7 @@ readonly class SearchRequestViewOptions
     public function toArray(): array
     {
         return [
-            'viewOptions' => $this->viewOptions,
+            'viewOptions' => $this->rawViewOptions ?? $this->viewOptions?->value,
         ];
     }
 
@@ -25,8 +28,11 @@ readonly class SearchRequestViewOptions
      */
     public static function fromArray(array $data): self
     {
+        $rawViewOptions = is_string($data['viewOptions'] ?? null) ? $data['viewOptions'] : null;
+
         return new self(
-            viewOptions: $data['viewOptions'] ?? null,
+            viewOptions: $rawViewOptions !== null ? ViewOptionKind::tryFrom($rawViewOptions) : null,
+            rawViewOptions: $rawViewOptions,
         );
     }
 }

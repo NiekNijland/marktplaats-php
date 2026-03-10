@@ -10,7 +10,7 @@ use NiekNijland\Marktplaats\Data\SearchQuery;
 $client = new Client();
 
 $result = $client->getSearch(new SearchQuery(
-    query: 'honda cbr',
+    query: 'bureau',
     categoryId: 678,
     distanceMeters: 25000,
     offerType: OfferType::OFFERED,
@@ -35,10 +35,10 @@ use NiekNijland\Marktplaats\Data\Enums\OfferType;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 
 $query = SearchQuery::builder()
-    ->query('honda cbr')
+    ->query('bureau')
     ->categoryId(678)
     ->subCategoryId(696)
-    ->postalcode('1012AB')
+    ->postalCode('1012AB')
     ->distanceMeters(25000)
     ->offerType(OfferType::OFFERED)
     ->addAttributeRange(new AttributeRange('PriceCents', 50000, 800000))
@@ -58,14 +58,14 @@ use NiekNijland\Marktplaats\Data\SearchQuery;
 
 $client = new Client();
 
-$catalog = $client->getCategoryCatalog(678); // Motoren
+$catalog = $client->getCategoryCatalog(678);
 
-$honda = $catalog->findByName('Honda');
+$matchedCategory = $catalog->categories[0] ?? null;
 
 $result = $client->getSearch(
     new SearchQuery(
         categoryId: 678,
-        subCategoryId: $honda?->id,
+        subCategoryId: $matchedCategory?->id,
     ),
     excludedCategoryIds: [723, 724], // optional client-side exclusions
 );
@@ -104,7 +104,7 @@ $client = new Client();
 
 $result = $client->getSearch(new SearchQuery(
     categoryId: 678,
-    postalcode: '1012AB',
+    postalCode: '1012AB',
     attributeRanges: [
         new AttributeRange(attribute: 'PriceCents', from: 50000, to: 800000),
     ],
@@ -145,7 +145,7 @@ use NiekNijland\Marktplaats\Client;
 
 $client = new Client();
 
-$detail = $client->getListing('https://www.marktplaats.nl/v/motoren/honda/m1234567890-test');
+$detail = $client->getListing('https://www.marktplaats.nl/v/huis-en-inrichting/bureaus/m1234567890-test');
 
 echo $detail->title . PHP_EOL;
 echo $detail->description . PHP_EOL;

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Data;
 
+use NiekNijland\Marktplaats\Data\Enums\ListingAdType;
+
 readonly class ListingDetail
 {
     /**
@@ -17,7 +19,8 @@ readonly class ListingDetail
         public string $itemId,
         public string $title,
         public ?string $description = null,
-        public ?string $adType = null,
+        public ?ListingAdType $adType = null,
+        public ?string $rawAdType = null,
         public ?PriceInfo $priceInfo = null,
         public ?ListingDetailSeller $seller = null,
         public ?ListingDetailCategory $category = null,
@@ -59,7 +62,7 @@ readonly class ListingDetail
             'itemId' => $this->itemId,
             'title' => $this->title,
             'description' => $this->description,
-            'adType' => $this->adType,
+            'adType' => $this->rawAdType ?? $this->adType?->value,
             'priceInfo' => $this->priceInfo?->toArray(),
             'seller' => $this->seller?->toArray(),
             'category' => $this->category?->toArray(),
@@ -87,6 +90,8 @@ readonly class ListingDetail
      */
     public static function fromArray(array $data): self
     {
+        $rawAdType = is_string($data['adType'] ?? null) ? $data['adType'] : null;
+
         $imageSizes = [];
 
         if (is_array($data['imageSizes'] ?? null)) {
@@ -105,25 +110,26 @@ readonly class ListingDetail
             itemId: $data['itemId'] ?? '',
             title: $data['title'] ?? '',
             description: $data['description'] ?? null,
-            adType: $data['adType'] ?? null,
-            priceInfo: isset($data['priceInfo']) ? PriceInfo::fromArray($data['priceInfo']) : null,
-            seller: isset($data['seller']) ? ListingDetailSeller::fromArray($data['seller']) : null,
-            category: isset($data['category']) ? ListingDetailCategory::fromArray($data['category']) : null,
-            stats: isset($data['stats']) ? ListingDetailStats::fromArray($data['stats']) : null,
-            bidsInfo: isset($data['bidsInfo']) ? ListingDetailBidsInfo::fromArray($data['bidsInfo']) : null,
-            shipping: isset($data['shipping']) ? ListingDetailShipping::fromArray($data['shipping']) : null,
-            images: array_values(array_map(
+            adType: $rawAdType !== null ? ListingAdType::tryFrom($rawAdType) : null,
+            rawAdType: $rawAdType,
+            priceInfo: is_array($data['priceInfo'] ?? null) ? PriceInfo::fromArray($data['priceInfo']) : null,
+            seller: is_array($data['seller'] ?? null) ? ListingDetailSeller::fromArray($data['seller']) : null,
+            category: is_array($data['category'] ?? null) ? ListingDetailCategory::fromArray($data['category']) : null,
+            stats: is_array($data['stats'] ?? null) ? ListingDetailStats::fromArray($data['stats']) : null,
+            bidsInfo: is_array($data['bidsInfo'] ?? null) ? ListingDetailBidsInfo::fromArray($data['bidsInfo']) : null,
+            shipping: is_array($data['shipping'] ?? null) ? ListingDetailShipping::fromArray($data['shipping']) : null,
+            images: array_map(
                 static fn (array $i): ListingDetailImage => ListingDetailImage::fromArray($i),
-                $data['images'] ?? [],
-            )),
-            imageUrls: $data['imageUrls'] ?? [],
+                self::normalizeListOfArrays($data['images'] ?? []),
+            ),
+            imageUrls: self::normalizeListOfStrings($data['imageUrls'] ?? []),
             imageSizes: $imageSizes,
-            galleryAlt: $data['galleryAlt'] ?? null,
-            attributes: array_values(array_map(
+            galleryAlt: is_string($data['galleryAlt'] ?? null) ? $data['galleryAlt'] : null,
+            attributes: array_map(
                 static fn (array $a): ListingDetailAttribute => ListingDetailAttribute::fromArray($a),
-                $data['attributes'] ?? [],
-            )),
-            traits: $data['traits'] ?? [],
+                self::normalizeListOfArrays($data['attributes'] ?? []),
+            ),
+            traits: self::normalizeListOfStrings($data['traits'] ?? []),
             buyItNowEnabled: (bool) ($data['buyItNowEnabled'] ?? false),
             buyersProtectionAllowed: (bool) ($data['buyersProtectionAllowed'] ?? false),
             thinContent: (bool) ($data['thinContent'] ?? false),
@@ -132,5 +138,35 @@ readonly class ListingDetail
             shippable: (bool) ($data['shippable'] ?? false),
             fullUrl: $data['fullUrl'] ?? '',
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function normalizeListOfArrays(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_array($item),
+        ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function normalizeListOfStrings(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_string($item),
+        ));
     }
 }

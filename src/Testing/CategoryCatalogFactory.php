@@ -15,14 +15,14 @@ class CategoryCatalogFactory
      */
     public static function make(
         ?array $categories = null,
-        int $parentCategoryId = 678,
+        int $parentCategoryId = 15,
         ?DateTimeImmutable $discoveredAt = null,
     ): CategoryCatalog {
         return new CategoryCatalog(
             categories: $categories ?? [
-                CategoryFactory::make(id: 696, key: 'honda', name: 'Honda', fullName: 'Motoren | Honda'),
-                CategoryFactory::make(id: 710, key: 'yamaha', name: 'Yamaha', fullName: 'Motoren | Yamaha'),
-                CategoryFactory::make(id: 692, key: 'bmw', name: 'BMW', fullName: 'Motoren | BMW'),
+                CategoryFactory::make(id: 51, key: 'bureaus', name: 'Bureaus', fullName: 'Huis en Inrichting | Bureaus'),
+                CategoryFactory::make(id: 52, key: 'stoelen', name: 'Stoelen', fullName: 'Huis en Inrichting | Stoelen'),
+                CategoryFactory::make(id: 53, key: 'kasten', name: 'Kasten', fullName: 'Huis en Inrichting | Kasten'),
             ],
             parentCategoryId: $parentCategoryId,
             discoveredAt: $discoveredAt ?? new DateTimeImmutable,

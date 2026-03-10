@@ -17,7 +17,7 @@ class ListingDetailFactory
             'itemId' => 'm'.random_int(1000000000, 9999999999),
             'title' => 'Test Listing Detail',
             'description' => 'A detailed description of the listing.',
-            'adType' => 'OFFERED',
+            'adType' => 'RegularPaid',
             'priceInfo' => [
                 'priceCents' => 450000,
                 'priceType' => 'FIXED',
@@ -26,7 +26,7 @@ class ListingDetailFactory
                 'id' => 12345,
                 'name' => 'Test Seller',
                 'pageUrl' => '/u/test-seller/12345/',
-                'sellerType' => 'PRIVATE',
+                'sellerType' => 'CONSUMER',
                 'activeYears' => 3,
                 'isAsqEnabled' => true,
                 'showSellerReviews' => false,
@@ -44,11 +44,11 @@ class ListingDetailFactory
                 'contactOptions' => [],
             ],
             'category' => [
-                'id' => 696,
-                'name' => 'Honda',
-                'fullName' => 'Motoren | Honda',
-                'parentId' => 678,
-                'parentName' => 'Motoren',
+                'id' => 51,
+                'name' => 'Bureaus',
+                'fullName' => 'Huis en Inrichting | Bureaus',
+                'parentId' => 15,
+                'parentName' => 'Huis en Inrichting',
             ],
             'stats' => [
                 'viewCount' => 150,
@@ -73,8 +73,8 @@ class ListingDetailFactory
             ],
             'galleryAlt' => 'Test gallery alt',
             'attributes' => [
-                ['label' => 'Bouwjaar', 'value' => '2020'],
-                ['label' => 'Kilometerstand', 'value' => '15.000 km'],
+                ['label' => 'Materiaal', 'value' => 'Hout'],
+                ['label' => 'Conditie', 'value' => 'Gebruikt'],
             ],
             'traits' => [],
             'buyItNowEnabled' => false,
@@ -83,7 +83,7 @@ class ListingDetailFactory
             'isAutomotiveAd' => false,
             'isFreeAd' => false,
             'shippable' => false,
-            'fullUrl' => 'https://www.marktplaats.nl/v/motoren/honda/m1234567890-test-listing',
+            'fullUrl' => 'https://www.marktplaats.nl/v/huis-en-inrichting/bureaus/m1234567890-test-listing',
         ];
 
         return ListingDetail::fromArray(array_merge($defaults, $overrides));

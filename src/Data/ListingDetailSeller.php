@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Data;
 
+use NiekNijland\Marktplaats\Data\Enums\SellerType;
+
 readonly class ListingDetailSeller
 {
     /**
@@ -13,7 +15,8 @@ readonly class ListingDetailSeller
         public int $id,
         public ?string $name = null,
         public ?string $pageUrl = null,
-        public ?string $sellerType = null,
+        public ?SellerType $sellerType = null,
+        public ?string $rawSellerType = null,
         public ?int $activeYears = null,
         public bool $isAsqEnabled = false,
         public bool $showSellerReviews = false,
@@ -32,7 +35,7 @@ readonly class ListingDetailSeller
             'id' => $this->id,
             'name' => $this->name,
             'pageUrl' => $this->pageUrl,
-            'sellerType' => $this->sellerType,
+            'sellerType' => $this->rawSellerType ?? $this->sellerType?->value,
             'activeYears' => $this->activeYears,
             'isAsqEnabled' => $this->isAsqEnabled,
             'showSellerReviews' => $this->showSellerReviews,
@@ -48,18 +51,36 @@ readonly class ListingDetailSeller
      */
     public static function fromArray(array $data): self
     {
+        $rawSellerType = is_string($data['sellerType'] ?? null) ? $data['sellerType'] : null;
+
         return new self(
             id: (int) ($data['id'] ?? 0),
-            name: $data['name'] ?? null,
-            pageUrl: $data['pageUrl'] ?? null,
-            sellerType: $data['sellerType'] ?? null,
+            name: is_string($data['name'] ?? null) ? $data['name'] : null,
+            pageUrl: is_string($data['pageUrl'] ?? null) ? $data['pageUrl'] : null,
+            sellerType: $rawSellerType !== null ? SellerType::tryFrom($rawSellerType) : null,
+            rawSellerType: $rawSellerType,
             activeYears: isset($data['activeYears']) ? (int) $data['activeYears'] : null,
             isAsqEnabled: (bool) ($data['isAsqEnabled'] ?? false),
             showSellerReviews: (bool) ($data['showSellerReviews'] ?? false),
             showVerifications: (bool) ($data['showVerifications'] ?? false),
             financeAvailable: (bool) ($data['financeAvailable'] ?? false),
-            location: isset($data['location']) ? ListingDetailLocation::fromArray($data['location']) : null,
-            contactOptions: $data['contactOptions'] ?? [],
+            location: is_array($data['location'] ?? null) ? ListingDetailLocation::fromArray($data['location']) : null,
+            contactOptions: self::normalizeListOfStrings($data['contactOptions'] ?? []),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function normalizeListOfStrings(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_string($item),
+        ));
     }
 }

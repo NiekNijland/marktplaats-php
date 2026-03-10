@@ -28,8 +28,21 @@ readonly class SearchRequestPagination
     public static function fromArray(array $data): self
     {
         return new self(
-            offset: $data['offset'] ?? null,
-            limit: $data['limit'] ?? null,
+            offset: self::toNullableInt($data['offset'] ?? null),
+            limit: self::toNullableInt($data['limit'] ?? null),
         );
+    }
+
+    private static function toNullableInt(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && is_numeric($value)) {
+            return (int) $value;
+        }
+
+        return null;
     }
 }

@@ -37,9 +37,9 @@ readonly class CategoryCatalog
         return new self(
             categories: array_map(
                 fn (array $category): Category => Category::fromArray($category),
-                $data['categories'] ?? [],
+                self::normalizeListOfArrays($data['categories'] ?? []),
             ),
-            parentCategoryId: $data['parentCategoryId'] ?? 0,
+            parentCategoryId: isset($data['parentCategoryId']) ? (int) $data['parentCategoryId'] : 0,
             discoveredAt: new DateTimeImmutable($data['discoveredAt'] ?? 'now'),
         );
     }
@@ -75,5 +75,20 @@ readonly class CategoryCatalog
         }
 
         return null;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function normalizeListOfArrays(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_array($item),
+        ));
     }
 }

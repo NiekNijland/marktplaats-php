@@ -42,15 +42,15 @@ readonly class SearchFacetCategory
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'] ?? null,
-            label: $data['label'] ?? null,
-            key: $data['key'] ?? null,
-            parentId: $data['parentId'] ?? null,
+            id: isset($data['id']) ? (int) $data['id'] : null,
+            label: is_string($data['label'] ?? null) ? $data['label'] : null,
+            key: is_string($data['key'] ?? null) ? $data['key'] : null,
+            parentId: isset($data['parentId']) ? (int) $data['parentId'] : null,
             parentKey: is_string($data['parentKey'] ?? null) ? $data['parentKey'] : null,
-            selected: $data['selected'] ?? false,
-            isValuableForSeo: $data['isValuableForSeo'] ?? null,
-            dominant: $data['dominant'] ?? null,
-            histogramCount: $data['histogramCount'] ?? null,
+            selected: (bool) ($data['selected'] ?? false),
+            isValuableForSeo: is_bool($data['isValuableForSeo'] ?? null) ? $data['isValuableForSeo'] : null,
+            dominant: is_bool($data['dominant'] ?? null) ? $data['dominant'] : null,
+            histogramCount: isset($data['histogramCount']) ? (int) $data['histogramCount'] : null,
         );
     }
 }

@@ -94,48 +94,78 @@ readonly class Listing
         return new self(
             itemId: (string) ($data['itemId'] ?? ''),
             title: (string) ($data['title'] ?? ''),
-            description: $data['description'] ?? null,
-            categorySpecificDescription: $data['categorySpecificDescription'] ?? null,
-            categoryId: $data['categoryId'] ?? null,
-            vipUrl: $data['vipUrl'] ?? null,
-            fullUrl: $data['fullUrl'] ?? null,
-            priceInfo: isset($data['priceInfo']) ? PriceInfo::fromArray($data['priceInfo']) : null,
-            location: isset($data['location']) ? Location::fromArray($data['location']) : null,
-            imageUrls: $data['imageUrls'] ?? [],
+            description: is_string($data['description'] ?? null) ? $data['description'] : null,
+            categorySpecificDescription: is_string($data['categorySpecificDescription'] ?? null) ? $data['categorySpecificDescription'] : null,
+            categoryId: isset($data['categoryId']) ? (int) $data['categoryId'] : null,
+            vipUrl: is_string($data['vipUrl'] ?? null) ? $data['vipUrl'] : null,
+            fullUrl: is_string($data['fullUrl'] ?? null) ? $data['fullUrl'] : null,
+            priceInfo: is_array($data['priceInfo'] ?? null) ? PriceInfo::fromArray($data['priceInfo']) : null,
+            location: is_array($data['location'] ?? null) ? Location::fromArray($data['location']) : null,
+            imageUrls: self::normalizeListOfStrings($data['imageUrls'] ?? []),
             pictures: array_map(
                 static fn (array $p): ListingPicture => ListingPicture::fromArray($p),
-                $data['pictures'] ?? [],
+                self::normalizeListOfArrays($data['pictures'] ?? []),
             ),
-            sellerInformation: isset($data['sellerInformation']) ? SellerInformation::fromArray($data['sellerInformation']) : null,
+            sellerInformation: is_array($data['sellerInformation'] ?? null) ? SellerInformation::fromArray($data['sellerInformation']) : null,
             attributes: array_map(
                 static fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
-                $data['attributes'] ?? [],
+                self::normalizeListOfArrays($data['attributes'] ?? []),
             ),
             extendedAttributes: array_map(
                 static fn (array $a): ListingAttribute => ListingAttribute::fromArray($a),
-                $data['extendedAttributes'] ?? [],
+                self::normalizeListOfArrays($data['extendedAttributes'] ?? []),
             ),
-            traits: $data['traits'] ?? [],
-            verticals: $data['verticals'] ?? [],
-            date: $data['date'] ?? null,
-            priorityProduct: $data['priorityProduct'] ?? null,
+            traits: self::normalizeListOfStrings($data['traits'] ?? []),
+            verticals: self::normalizeListOfStrings($data['verticals'] ?? []),
+            date: is_string($data['date'] ?? null) ? $data['date'] : null,
+            priorityProduct: is_string($data['priorityProduct'] ?? null) ? $data['priorityProduct'] : null,
             reserved: $data['reserved'] ?? false,
-            searchType: $data['searchType'] ?? null,
+            searchType: is_string($data['searchType'] ?? null) ? $data['searchType'] : null,
             thinContent: $data['thinContent'] ?? false,
             videoOnVip: $data['videoOnVip'] ?? false,
             urgencyFeatureActive: $data['urgencyFeatureActive'] ?? false,
             napAvailable: $data['napAvailable'] ?? false,
-            trackingData: $data['trackingData'] ?? null,
-            pageLocation: $data['pageLocation'] ?? null,
-            opvalStickerText: $data['opvalStickerText'] ?? null,
+            trackingData: is_string($data['trackingData'] ?? null) ? $data['trackingData'] : null,
+            pageLocation: is_string($data['pageLocation'] ?? null) ? $data['pageLocation'] : null,
+            opvalStickerText: is_string($data['opvalStickerText'] ?? null) ? $data['opvalStickerText'] : null,
             highlights: array_map(
                 static fn (array $h): ListingHighlight => ListingHighlight::fromArray($h),
-                $data['highlights'] ?? [],
+                self::normalizeListOfArrays($data['highlights'] ?? []),
             ),
             trustIndicators: array_map(
                 static fn (array $t): ListingTrustIndicator => ListingTrustIndicator::fromArray($t),
-                $data['trustIndicators'] ?? [],
+                self::normalizeListOfArrays($data['trustIndicators'] ?? []),
             ),
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function normalizeListOfArrays(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_array($item),
+        ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function normalizeListOfStrings(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_string($item),
+        ));
     }
 }

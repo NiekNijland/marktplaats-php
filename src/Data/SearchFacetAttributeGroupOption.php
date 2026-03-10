@@ -38,13 +38,13 @@ readonly class SearchFacetAttributeGroupOption
     public static function fromArray(array $data): self
     {
         return new self(
-            attributeValueKey: $data['attributeValueKey'] ?? null,
-            attributeValueId: $data['attributeValueId'] ?? null,
-            attributeValueLabel: $data['attributeValueLabel'] ?? null,
-            histogramCount: $data['histogramCount'] ?? null,
-            selected: $data['selected'] ?? false,
-            isValuableForSeo: $data['isValuableForSeo'] ?? null,
-            default: $data['default'] ?? null,
+            attributeValueKey: is_string($data['attributeValueKey'] ?? null) ? $data['attributeValueKey'] : null,
+            attributeValueId: isset($data['attributeValueId']) ? (int) $data['attributeValueId'] : null,
+            attributeValueLabel: is_string($data['attributeValueLabel'] ?? null) ? $data['attributeValueLabel'] : null,
+            histogramCount: isset($data['histogramCount']) ? (int) $data['histogramCount'] : null,
+            selected: (bool) ($data['selected'] ?? false),
+            isValuableForSeo: is_bool($data['isValuableForSeo'] ?? null) ? $data['isValuableForSeo'] : null,
+            default: is_bool($data['default'] ?? null) ? $data['default'] : null,
         );
     }
 }

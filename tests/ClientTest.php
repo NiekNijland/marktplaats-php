@@ -238,6 +238,43 @@ class ClientTest extends TestCase
         $this->assertCount(2, $listings);
     }
 
+    public function test_get_search_all_deduplicates_listings_across_pages(): void
+    {
+        $page1 = json_encode([
+            'listings' => [
+                ['itemId' => 'm-dup-1', 'title' => 'Listing One', 'categoryId' => 696],
+                ['itemId' => 'm-dup-2', 'title' => 'Listing Two', 'categoryId' => 696],
+            ],
+            'totalResultCount' => 3,
+            'maxAllowedPageNumber' => 2,
+        ], JSON_THROW_ON_ERROR);
+
+        $page2 = json_encode([
+            'listings' => [
+                ['itemId' => 'm-dup-2', 'title' => 'Listing Two duplicate', 'categoryId' => 696],
+                ['itemId' => 'm-dup-3', 'title' => 'Listing Three', 'categoryId' => 696],
+            ],
+            'totalResultCount' => 3,
+            'maxAllowedPageNumber' => 2,
+        ], JSON_THROW_ON_ERROR);
+
+        $mock = new MockHandler([
+            new Response(200, [], $page1),
+            new Response(200, [], $page2),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $listings = array_values(iterator_to_array($client->getSearchAll(new SearchQuery(categoryId: 678, limit: 2))));
+
+        $this->assertCount(3, $listings);
+        $this->assertSame('m-dup-1', $listings[0]->itemId);
+        $this->assertSame('m-dup-2', $listings[1]->itemId);
+        $this->assertSame('m-dup-3', $listings[2]->itemId);
+    }
+
     public function test_get_search_all_continues_after_fully_excluded_page(): void
     {
         $page1 = json_encode([

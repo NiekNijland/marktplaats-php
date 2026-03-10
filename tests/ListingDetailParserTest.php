@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace NiekNijland\Marktplaats\Tests;
 
+use NiekNijland\Marktplaats\Data\Enums\ListingAdType;
 use NiekNijland\Marktplaats\Data\Enums\PriceType;
+use NiekNijland\Marktplaats\Data\Enums\SellerType;
 use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\ListingDetailAttribute;
 use NiekNijland\Marktplaats\Exception\ClientException;
@@ -63,7 +65,7 @@ class ListingDetailParserTest extends TestCase
         $this->assertNotNull($detail->seller);
         $this->assertSame(48042674, $detail->seller->id);
         $this->assertSame('Maris45', $detail->seller->name);
-        $this->assertSame('CONSUMER', $detail->seller->sellerType);
+        $this->assertSame(SellerType::CONSUMER, $detail->seller->sellerType);
         $this->assertSame(3, $detail->seller->activeYears);
         $this->assertTrue($detail->seller->isAsqEnabled);
         $this->assertSame(['asq'], $detail->seller->contactOptions);
@@ -186,7 +188,7 @@ class ListingDetailParserTest extends TestCase
     {
         $detail = $this->parser->parseHtml($this->fixtureHtml, '/v/test');
 
-        $this->assertSame('RegularPaid', $detail->adType);
+        $this->assertSame(ListingAdType::REGULAR_PAID, $detail->adType);
         $this->assertFalse($detail->buyItNowEnabled);
         $this->assertFalse($detail->buyersProtectionAllowed);
         $this->assertFalse($detail->thinContent);
@@ -262,6 +264,7 @@ class ListingDetailParserTest extends TestCase
         $this->assertSame('123', $detail->itemId);
         $this->assertSame('1', $detail->title);
         $this->assertNull($detail->adType);
+        $this->assertNull($detail->rawAdType);
         $this->assertNull($detail->priceInfo);
         $this->assertNull($detail->seller);
         $this->assertNull($detail->category);

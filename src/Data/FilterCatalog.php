@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NiekNijland\Marktplaats\Data;
 
 use DateTimeImmutable;
+use NiekNijland\Marktplaats\Data\Enums\SearchFacetType;
 
 readonly class FilterCatalog
 {
@@ -39,10 +40,10 @@ readonly class FilterCatalog
         return new self(
             facets: array_map(
                 fn (array $facet): SearchFacet => SearchFacet::fromArray($facet),
-                $data['facets'] ?? [],
+                self::normalizeListOfArrays($data['facets'] ?? []),
             ),
             categoryId: (int) ($data['categoryId'] ?? $data['l1CategoryId'] ?? 0),
-            subCategoryId: isset($data['subCategoryId']) ? $data['subCategoryId'] : ($data['l2CategoryId'] ?? null),
+            subCategoryId: self::toNullableInt($data['subCategoryId'] ?? $data['l2CategoryId'] ?? null),
             discoveredAt: new DateTimeImmutable($data['discoveredAt'] ?? 'now'),
         );
     }
@@ -54,7 +55,7 @@ readonly class FilterCatalog
     {
         return array_values(array_filter(
             $this->facets,
-            fn (SearchFacet $facet): bool => $facet->type === 'AttributeRangeFacet',
+            fn (SearchFacet $facet): bool => $facet->isType(SearchFacetType::ATTRIBUTE_RANGE),
         ));
     }
 
@@ -65,7 +66,7 @@ readonly class FilterCatalog
     {
         return array_values(array_filter(
             $this->facets,
-            fn (SearchFacet $facet): bool => $facet->type === 'AttributeGroupFacet',
+            fn (SearchFacet $facet): bool => $facet->isType(SearchFacetType::ATTRIBUTE_GROUP),
         ));
     }
 
@@ -75,6 +76,34 @@ readonly class FilterCatalog
             if ($facet->key === $key) {
                 return $facet;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function normalizeListOfArrays(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $value,
+            static fn (mixed $item): bool => is_array($item),
+        ));
+    }
+
+    private static function toNullableInt(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && is_numeric($value)) {
+            return (int) $value;
         }
 
         return null;

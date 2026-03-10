@@ -31,16 +31,16 @@ readonly class Category
     }
 
     /**
-     * @param  array{id: int, key?: ?string, name?: ?string, fullName?: ?string, parentId?: ?int, parentKey?: ?string}  $data
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
-            key: $data['key'] ?? null,
-            name: $data['name'] ?? null,
-            fullName: $data['fullName'] ?? null,
-            parentId: $data['parentId'] ?? null,
+            id: (int) ($data['id'] ?? 0),
+            key: is_string($data['key'] ?? null) ? $data['key'] : null,
+            name: is_string($data['name'] ?? null) ? $data['name'] : null,
+            fullName: is_string($data['fullName'] ?? null) ? $data['fullName'] : null,
+            parentId: isset($data['parentId']) ? (int) $data['parentId'] : null,
             parentKey: is_string($data['parentKey'] ?? null) ? $data['parentKey'] : null,
         );
     }

@@ -34,7 +34,7 @@ readonly class SearchQuery
         public SortOrder $sortOrder = SortOrder::DECREASING,
         public bool $searchInTitleAndDescription = true,
         public ViewOptionKind $viewOptions = ViewOptionKind::GALLERY_VIEW,
-        public ?string $postalcode = null,
+        public ?string $postalCode = null,
         public ?int $distanceMeters = null,
         public ?OfferType $offerType = null,
         public array $attributeRanges = [],
@@ -56,7 +56,7 @@ readonly class SearchQuery
             sortOrder: $this->sortOrder,
             searchInTitleAndDescription: $this->searchInTitleAndDescription,
             viewOptions: $this->viewOptions,
-            postalcode: $this->postalcode,
+            postalCode: $this->postalCode,
             distanceMeters: $this->distanceMeters,
             offerType: $this->offerType,
             attributeRanges: $this->attributeRanges,
@@ -91,8 +91,8 @@ readonly class SearchQuery
         $params['searchInTitleAndDescription'] = $this->searchInTitleAndDescription ? 'true' : 'false';
         $params['viewOptions'] = $this->viewOptions->value;
 
-        if ($this->postalcode !== null) {
-            $params['postcode'] = $this->postalcode;
+        if ($this->postalCode !== null) {
+            $params['postcode'] = $this->postalCode;
         }
 
         if ($this->distanceMeters !== null) {

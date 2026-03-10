@@ -31,11 +31,11 @@ readonly class SearchRequestCategories
      */
     public static function fromArray(array $data): self
     {
-        $l1CategoryId = isset($data['l1CategoryId']) ? $data['l1CategoryId'] : null;
+        $l1CategoryId = self::toNullableInt($data['l1CategoryId'] ?? null);
         $l1CategoryKey = is_string($data['l1CategoryKey'] ?? null) ? $data['l1CategoryKey'] : null;
         $l1CategoryFullName = is_string($data['l1CategoryFullName'] ?? null) ? $data['l1CategoryFullName'] : null;
 
-        $l2CategoryId = isset($data['l2CategoryId']) ? $data['l2CategoryId'] : null;
+        $l2CategoryId = self::toNullableInt($data['l2CategoryId'] ?? null);
         $l2CategoryKey = is_string($data['l2CategoryKey'] ?? null) ? $data['l2CategoryKey'] : null;
         $l2CategoryFullName = is_string($data['l2CategoryFullName'] ?? null) ? $data['l2CategoryFullName'] : null;
 
@@ -76,5 +76,18 @@ readonly class SearchRequestCategories
             parentId: $parentId,
             parentKey: $parentKey,
         );
+    }
+
+    private static function toNullableInt(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && is_numeric($value)) {
+            return (int) $value;
+        }
+
+        return null;
     }
 }

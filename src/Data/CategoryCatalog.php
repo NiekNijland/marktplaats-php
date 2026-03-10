@@ -39,7 +39,7 @@ readonly class CategoryCatalog
                 fn (array $category): Category => Category::fromArray($category),
                 self::normalizeListOfArrays($data['categories'] ?? []),
             ),
-            parentCategoryId: isset($data['parentCategoryId']) ? (int) $data['parentCategoryId'] : 0,
+            parentCategoryId: isset($data['parentCategoryId']) ? $data['parentCategoryId'] : 0,
             discoveredAt: new DateTimeImmutable($data['discoveredAt'] ?? 'now'),
         );
     }

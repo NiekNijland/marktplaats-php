@@ -38,7 +38,7 @@ readonly class SellerInformation
     public static function fromArray(array $data): self
     {
         return new self(
-            sellerId: isset($data['sellerId']) ? (int) $data['sellerId'] : null,
+            sellerId: isset($data['sellerId']) ? $data['sellerId'] : null,
             sellerName: is_string($data['sellerName'] ?? null) ? $data['sellerName'] : null,
             showSoiUrl: (bool) ($data['showSoiUrl'] ?? false),
             showWebsiteUrl: (bool) ($data['showWebsiteUrl'] ?? false),

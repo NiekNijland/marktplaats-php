@@ -39,9 +39,9 @@ readonly class SearchFacetAttributeGroupOption
     {
         return new self(
             attributeValueKey: is_string($data['attributeValueKey'] ?? null) ? $data['attributeValueKey'] : null,
-            attributeValueId: isset($data['attributeValueId']) ? (int) $data['attributeValueId'] : null,
+            attributeValueId: isset($data['attributeValueId']) ? $data['attributeValueId'] : null,
             attributeValueLabel: is_string($data['attributeValueLabel'] ?? null) ? $data['attributeValueLabel'] : null,
-            histogramCount: isset($data['histogramCount']) ? (int) $data['histogramCount'] : null,
+            histogramCount: isset($data['histogramCount']) ? $data['histogramCount'] : null,
             selected: (bool) ($data['selected'] ?? false),
             isValuableForSeo: is_bool($data['isValuableForSeo'] ?? null) ? $data['isValuableForSeo'] : null,
             default: is_bool($data['default'] ?? null) ? $data['default'] : null,

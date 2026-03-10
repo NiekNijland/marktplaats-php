@@ -13,26 +13,26 @@ readonly class FilterCatalog
      */
     public function __construct(
         public array $facets,
-        public int $l1CategoryId,
-        public ?int $l2CategoryId,
+        public int $categoryId,
+        public ?int $subCategoryId,
         public DateTimeImmutable $discoveredAt,
     ) {}
 
     /**
-     * @return array{facets: list<array<string, mixed>>, l1CategoryId: int, l2CategoryId: ?int, discoveredAt: string}
+     * @return array{facets: list<array<string, mixed>>, categoryId: int, subCategoryId: ?int, discoveredAt: string}
      */
     public function toArray(): array
     {
         return [
             'facets' => array_map(fn (SearchFacet $facet): array => $facet->toArray(), $this->facets),
-            'l1CategoryId' => $this->l1CategoryId,
-            'l2CategoryId' => $this->l2CategoryId,
+            'categoryId' => $this->categoryId,
+            'subCategoryId' => $this->subCategoryId,
             'discoveredAt' => $this->discoveredAt->format('c'),
         ];
     }
 
     /**
-     * @param  array{facets?: list<array<string, mixed>>, l1CategoryId?: int, l2CategoryId?: ?int, discoveredAt?: string}  $data
+     * @param  array{facets?: list<array<string, mixed>>, categoryId?: int, subCategoryId?: ?int, discoveredAt?: string, l1CategoryId?: int, l2CategoryId?: ?int}  $data
      */
     public static function fromArray(array $data): self
     {
@@ -41,8 +41,8 @@ readonly class FilterCatalog
                 fn (array $facet): SearchFacet => SearchFacet::fromArray($facet),
                 $data['facets'] ?? [],
             ),
-            l1CategoryId: (int) ($data['l1CategoryId'] ?? 0),
-            l2CategoryId: isset($data['l2CategoryId']) ? $data['l2CategoryId'] : null,
+            categoryId: (int) ($data['categoryId'] ?? $data['l1CategoryId'] ?? 0),
+            subCategoryId: isset($data['subCategoryId']) ? $data['subCategoryId'] : ($data['l2CategoryId'] ?? null),
             discoveredAt: new DateTimeImmutable($data['discoveredAt'] ?? 'now'),
         );
     }

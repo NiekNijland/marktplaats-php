@@ -40,19 +40,19 @@ class Client implements ClientInterface
         $this->listingDetailParser = new ListingDetailParser;
     }
 
-    public function getSearch(SearchQuery $query): SearchResult
+    public function getSearch(SearchQuery $query, array $excludedCategoryIds = []): SearchResult
     {
         $cacheKey = $query->buildCacheKey();
 
         if (($cached = $this->fetchFromCache($cacheKey)) instanceof SearchResult) {
-            return $this->applyExcludedCategoryFilter($cached, $query->excludedCategoryIds);
+            return $cached->excludeCategories($excludedCategoryIds);
         }
 
         $result = $this->fetchSearchResult($query);
 
         $this->storeInCache($cacheKey, $result);
 
-        return $this->applyExcludedCategoryFilter($result, $query->excludedCategoryIds);
+        return $result->excludeCategories($excludedCategoryIds);
     }
 
     /**
@@ -63,7 +63,7 @@ class Client implements ClientInterface
      *
      * @return Generator<int, Listing>
      */
-    public function getSearchAll(SearchQuery $query): Generator
+    public function getSearchAll(SearchQuery $query, array $excludedCategoryIds = []): Generator
     {
         $offset = $query->offset;
         $yieldedCount = 0;
@@ -83,7 +83,7 @@ class Client implements ClientInterface
                 break;
             }
 
-            $filteredResult = $this->applyExcludedCategoryFilter($result, $currentQuery->excludedCategoryIds);
+            $filteredResult = $result->excludeCategories($excludedCategoryIds);
 
             $currentItemIds = array_map(fn (Listing $l): string => $l->itemId, $result->listings);
 
@@ -112,16 +112,16 @@ class Client implements ClientInterface
         }
     }
 
-    public function getCategoryCatalog(int $l1CategoryId): CategoryCatalog
+    public function getCategoryCatalog(int $categoryId): CategoryCatalog
     {
-        $cacheKey = 'marktplaats:categories:'.$l1CategoryId;
+        $cacheKey = 'marktplaats:categories:'.$categoryId;
 
         if (($cached = $this->fetchCategoryCatalogFromCache($cacheKey)) instanceof CategoryCatalog) {
             return $cached;
         }
 
         $discoveryQuery = new SearchQuery(
-            l1CategoryId: $l1CategoryId,
+            categoryId: $categoryId,
             limit: 1,
         );
 
@@ -137,7 +137,7 @@ class Client implements ClientInterface
 
         $catalog = $this->searchParser->parseCategoryCatalog(
             $data,
-            $l1CategoryId,
+            $categoryId,
         );
 
         $this->storeCategoryCatalogInCache($cacheKey, $catalog);
@@ -145,17 +145,17 @@ class Client implements ClientInterface
         return $catalog;
     }
 
-    public function getFilterCatalog(int $l1CategoryId, ?int $l2CategoryId = null): FilterCatalog
+    public function getFilterCatalog(int $categoryId, ?int $subCategoryId = null): FilterCatalog
     {
-        $cacheKey = 'marktplaats:filters:'.$l1CategoryId.':'.($l2CategoryId ?? 'all');
+        $cacheKey = 'marktplaats:filters:'.$categoryId.':'.($subCategoryId ?? 'all');
 
         if (($cached = $this->fetchFilterCatalogFromCache($cacheKey)) instanceof FilterCatalog) {
             return $cached;
         }
 
         $discoveryQuery = new SearchQuery(
-            l1CategoryId: $l1CategoryId,
-            l2CategoryId: $l2CategoryId,
+            categoryId: $categoryId,
+            subCategoryId: $subCategoryId,
             limit: 1,
         );
 
@@ -163,8 +163,8 @@ class Client implements ClientInterface
 
         $catalog = new FilterCatalog(
             facets: array_values($result->facets),
-            l1CategoryId: $l1CategoryId,
-            l2CategoryId: $l2CategoryId,
+            categoryId: $categoryId,
+            subCategoryId: $subCategoryId,
             discoveredAt: new DateTimeImmutable,
         );
 
@@ -256,37 +256,6 @@ class Client implements ClientInterface
         }
 
         return (string) $response->getBody();
-    }
-
-    /**
-     * @param  list<int>  $excludedCategoryIds
-     */
-    private function applyExcludedCategoryFilter(SearchResult $result, array $excludedCategoryIds): SearchResult
-    {
-        if ($excludedCategoryIds === []) {
-            return $result;
-        }
-
-        $filtered = array_values(array_filter(
-            $result->listings,
-            fn (Listing $listing): bool => $listing->categoryId === null
-                || ! in_array($listing->categoryId, $excludedCategoryIds, true),
-        ));
-
-        return new SearchResult(
-            listings: $filtered,
-            topBlock: $result->topBlock,
-            facets: $result->facets,
-            totalResultCount: $result->totalResultCount,
-            maxAllowedPageNumber: $result->maxAllowedPageNumber,
-            correlationId: $result->correlationId,
-            originalQuery: $result->originalQuery,
-            sortOptions: $result->sortOptions,
-            searchCategory: $result->searchCategory,
-            searchCategoryOptions: $result->searchCategoryOptions,
-            searchRequest: $result->searchRequest,
-            metaTags: $result->metaTags,
-        );
     }
 
     private function fetchFromCache(string $key): ?SearchResult

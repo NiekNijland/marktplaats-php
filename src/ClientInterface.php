@@ -16,30 +16,33 @@ use NiekNijland\Marktplaats\Exception\ClientException;
 interface ClientInterface
 {
     /**
+     * @param  list<int>  $excludedCategoryIds
+     *
      * @throws ClientException
      */
-    public function getSearch(SearchQuery $query): SearchResult;
+    public function getSearch(SearchQuery $query, array $excludedCategoryIds = []): SearchResult;
 
     /**
+     * @param  list<int>  $excludedCategoryIds
      * @return Generator<int, Listing>
      *
      * @throws ClientException
      */
-    public function getSearchAll(SearchQuery $query): Generator;
+    public function getSearchAll(SearchQuery $query, array $excludedCategoryIds = []): Generator;
 
     /**
-     * Returns live subcategories discovered from API metadata for an L1 category.
+     * Returns live subcategories discovered from API metadata for a category.
      *
      * @throws ClientException
      */
-    public function getCategoryCatalog(int $l1CategoryId): CategoryCatalog;
+    public function getCategoryCatalog(int $categoryId): CategoryCatalog;
 
     /**
-     * Returns available search facets for an L1/L2 category combination.
+     * Returns available search facets for a category/subcategory combination.
      *
      * @throws ClientException
      */
-    public function getFilterCatalog(int $l1CategoryId, ?int $l2CategoryId = null): FilterCatalog;
+    public function getFilterCatalog(int $categoryId, ?int $subCategoryId = null): FilterCatalog;
 
     /**
      * Fetches the full detail page for a single listing.

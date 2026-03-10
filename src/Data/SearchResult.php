@@ -85,6 +85,45 @@ readonly class SearchResult
         );
     }
 
+    /**
+     * @param  list<Listing>  $listings
+     */
+    public function withListings(array $listings): self
+    {
+        return new self(
+            listings: $listings,
+            topBlock: $this->topBlock,
+            facets: $this->facets,
+            totalResultCount: $this->totalResultCount,
+            maxAllowedPageNumber: $this->maxAllowedPageNumber,
+            correlationId: $this->correlationId,
+            originalQuery: $this->originalQuery,
+            sortOptions: $this->sortOptions,
+            searchCategory: $this->searchCategory,
+            searchCategoryOptions: $this->searchCategoryOptions,
+            searchRequest: $this->searchRequest,
+            metaTags: $this->metaTags,
+        );
+    }
+
+    /**
+     * @param  list<int>  $excludedCategoryIds
+     */
+    public function excludeCategories(array $excludedCategoryIds): self
+    {
+        if ($excludedCategoryIds === []) {
+            return $this;
+        }
+
+        $filteredListings = array_values(array_filter(
+            $this->listings,
+            fn (Listing $listing): bool => $listing->categoryId === null
+                || ! in_array($listing->categoryId, $excludedCategoryIds, true),
+        ));
+
+        return $this->withListings($filteredListings);
+    }
+
     public static function empty(): self
     {
         return new self(

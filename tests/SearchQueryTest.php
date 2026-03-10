@@ -39,7 +39,7 @@ class SearchQueryTest extends TestCase
 
     public function test_query_with_category_ids(): void
     {
-        $query = new SearchQuery(l1CategoryId: 678, l2CategoryId: 696);
+        $query = new SearchQuery(categoryId: 678, subCategoryId: 696);
         $url = $query->buildUrl();
 
         $this->assertStringContainsString('l1CategoryId=678', $url);
@@ -83,9 +83,9 @@ class SearchQueryTest extends TestCase
     public function test_l2_without_l1_throws(): void
     {
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage('l2CategoryId requires l1CategoryId');
+        $this->expectExceptionMessage('subCategoryId requires categoryId');
 
-        new SearchQuery(l2CategoryId: 696);
+        new SearchQuery(subCategoryId: 696);
     }
 
     public function test_with_offset_creates_new_instance(): void
@@ -101,8 +101,8 @@ class SearchQueryTest extends TestCase
 
     public function test_cache_key_is_deterministic(): void
     {
-        $query1 = new SearchQuery(query: 'test', l1CategoryId: 678);
-        $query2 = new SearchQuery(query: 'test', l1CategoryId: 678);
+        $query1 = new SearchQuery(query: 'test', categoryId: 678);
+        $query2 = new SearchQuery(query: 'test', categoryId: 678);
 
         $this->assertSame($query1->buildCacheKey(), $query2->buildCacheKey());
     }
@@ -115,49 +115,12 @@ class SearchQueryTest extends TestCase
         $this->assertNotSame($query1->buildCacheKey(), $query2->buildCacheKey());
     }
 
-    public function test_cache_key_ignores_excluded_category_ids(): void
-    {
-        $query1 = new SearchQuery(l1CategoryId: 678, excludedCategoryIds: [723]);
-        $query2 = new SearchQuery(l1CategoryId: 678, excludedCategoryIds: [724]);
-
-        $this->assertSame($query1->buildCacheKey(), $query2->buildCacheKey());
-    }
-
     public function test_cache_key_starts_with_prefix(): void
     {
         $query = new SearchQuery;
         $key = $query->buildCacheKey();
 
         $this->assertStringStartsWith('marktplaats:search:', $key);
-    }
-
-    public function test_query_with_excluded_category_ids(): void
-    {
-        $query = new SearchQuery(excludedCategoryIds: [723, 724]);
-
-        $this->assertSame([723, 724], $query->excludedCategoryIds);
-    }
-
-    public function test_query_excluded_category_ids_not_in_url(): void
-    {
-        $query = new SearchQuery(excludedCategoryIds: [723, 724]);
-        $url = $query->buildUrl();
-
-        $this->assertStringNotContainsString('excludedCategoryIds', $url);
-    }
-
-    public function test_query_with_offset_preserves_excluded_category_ids(): void
-    {
-        $original = new SearchQuery(
-            l1CategoryId: 678,
-            excludedCategoryIds: [723, 724],
-        );
-
-        $modified = $original->withOffset(100);
-
-        $this->assertSame(0, $original->offset);
-        $this->assertSame(100, $modified->offset);
-        $this->assertSame([723, 724], $modified->excludedCategoryIds);
     }
 
     public function test_custom_sort_options(): void
@@ -175,9 +138,9 @@ class SearchQueryTest extends TestCase
         $this->assertStringContainsString('viewOptions=list-view', $url);
     }
 
-    public function test_query_with_postcode(): void
+    public function test_query_with_postalcode(): void
     {
-        $query = new SearchQuery(postcode: '1234AB');
+        $query = new SearchQuery(postalcode: '1234AB');
         $url = $query->buildUrl();
 
         $this->assertStringContainsString('postcode=1234AB', $url);
@@ -207,7 +170,7 @@ class SearchQueryTest extends TestCase
         new SearchQuery(distanceMeters: -1);
     }
 
-    public function test_query_omits_null_postcode(): void
+    public function test_query_omits_null_postalcode(): void
     {
         $query = new SearchQuery;
         $params = $query->toQueryParams();
@@ -267,13 +230,13 @@ class SearchQueryTest extends TestCase
     {
         $query = new SearchQuery(
             query: 'sv 650',
-            l1CategoryId: 678,
-            l2CategoryId: 707,
+            categoryId: 678,
+            subCategoryId: 707,
             limit: 30,
             offset: 0,
             searchInTitleAndDescription: true,
             viewOptions: ViewOptionKind::LIST_VIEW,
-            postcode: '1234AB',
+            postalcode: '1234AB',
             distanceMeters: 10000,
             offerType: 'offered',
             attributeRanges: [
@@ -365,7 +328,7 @@ class SearchQueryTest extends TestCase
     public function test_with_offset_preserves_filter_params(): void
     {
         $original = new SearchQuery(
-            postcode: '1234AB',
+            postalcode: '1234AB',
             distanceMeters: 10000,
             offerType: 'offered',
             attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
@@ -376,7 +339,7 @@ class SearchQueryTest extends TestCase
         $modified = $original->withOffset(30);
 
         $this->assertSame(30, $modified->offset);
-        $this->assertSame('1234AB', $modified->postcode);
+        $this->assertSame('1234AB', $modified->postalcode);
         $this->assertSame(10000, $modified->distanceMeters);
         $this->assertSame('offered', $modified->offerType);
         $this->assertCount(1, $modified->attributeRanges);
@@ -386,13 +349,12 @@ class SearchQueryTest extends TestCase
         $this->assertSame('offeredSince', $modified->attributesByKey[0]->key);
     }
 
-    public function test_with_offset_preserves_filter_params_and_exclusions(): void
+    public function test_with_offset_preserves_filter_params_and_category_ids(): void
     {
         $original = new SearchQuery(
             query: 'sv 650',
-            l1CategoryId: 678,
-            excludedCategoryIds: [723, 724],
-            postcode: '1234AB',
+            categoryId: 678,
+            postalcode: '1234AB',
             distanceMeters: 10000,
             offerType: 'offered',
             attributeRanges: [new AttributeRange('PriceCents', 50000, 800000)],
@@ -404,10 +366,10 @@ class SearchQueryTest extends TestCase
 
         $this->assertSame(30, $modified->offset);
         $this->assertSame('sv 650', $modified->query);
-        $this->assertSame('1234AB', $modified->postcode);
+        $this->assertSame('1234AB', $modified->postalcode);
         $this->assertSame(10000, $modified->distanceMeters);
         $this->assertSame('offered', $modified->offerType);
-        $this->assertSame([723, 724], $modified->excludedCategoryIds);
+        $this->assertSame(678, $modified->categoryId);
         $this->assertCount(1, $modified->attributeRanges);
         $this->assertSame([98], $modified->attributesById);
         $this->assertCount(1, $modified->attributesByKey);

@@ -90,7 +90,7 @@ class FakeClientTest extends TestCase
         $fake = new FakeClient;
         $fake->seedSearchResult($seeded);
 
-        $result = $fake->getSearch(new SearchQuery(excludedCategoryIds: [723]));
+        $result = $fake->getSearch(new SearchQuery, [723]);
 
         $this->assertSame(10, $result->totalResultCount);
         $this->assertSame([], $result->listings);
@@ -108,7 +108,7 @@ class FakeClientTest extends TestCase
         $fake = new FakeClient;
         $fake->seedSearchResult($seeded);
 
-        $result = $fake->getSearch(new SearchQuery(excludedCategoryIds: [723]));
+        $result = $fake->getSearch(new SearchQuery, [723]);
 
         $this->assertCount(1, $result->listings);
         $this->assertSame('m-null', $result->listings[0]->itemId);
@@ -144,7 +144,7 @@ class FakeClientTest extends TestCase
 
         $result = $fake->getFilterCatalog(678);
 
-        $this->assertSame(678, $result->l1CategoryId);
+        $this->assertSame(678, $result->categoryId);
         $this->assertNotEmpty($result->facets);
         $fake->assertCalled('getFilterCatalog');
     }

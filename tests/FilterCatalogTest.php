@@ -34,8 +34,8 @@ class FilterCatalogTest extends TestCase
         $array = $original->toArray();
         $restored = FilterCatalog::fromArray($array);
 
-        $this->assertSame($original->l1CategoryId, $restored->l1CategoryId);
-        $this->assertSame($original->l2CategoryId, $restored->l2CategoryId);
+        $this->assertSame($original->categoryId, $restored->categoryId);
+        $this->assertSame($original->subCategoryId, $restored->subCategoryId);
         $this->assertCount(count($original->facets), $restored->facets);
         $this->assertSame($original->facets[0]->key, $restored->facets[0]->key);
     }

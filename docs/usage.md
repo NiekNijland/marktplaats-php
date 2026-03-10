@@ -10,7 +10,7 @@ $client = new Client();
 
 $result = $client->getSearch(new SearchQuery(
     query: 'honda cbr',
-    l1CategoryId: 678,
+    categoryId: 678,
     distanceMeters: 25000,
     offerType: 'offered',
     limit: 25,
@@ -37,11 +37,13 @@ $catalog = $client->getCategoryCatalog(678); // Motoren
 
 $honda = $catalog->findByName('Honda');
 
-$result = $client->getSearch(new SearchQuery(
-    l1CategoryId: 678,
-    l2CategoryId: $honda?->id,
+$result = $client->getSearch(
+    new SearchQuery(
+        categoryId: 678,
+        subCategoryId: $honda?->id,
+    ),
     excludedCategoryIds: [723, 724], // optional client-side exclusions
-));
+);
 
 foreach ($result->listings as $listing) {
     echo $listing->title . PHP_EOL;
@@ -56,7 +58,7 @@ use NiekNijland\Marktplaats\Data\SearchQuery;
 
 $client = new Client();
 
-foreach ($client->getSearchAll(new SearchQuery(l1CategoryId: 678)) as $listing) {
+foreach ($client->getSearchAll(new SearchQuery(categoryId: 678)) as $listing) {
     echo $listing->itemId . ': ' . $listing->title . PHP_EOL;
 }
 ```
@@ -76,8 +78,8 @@ use NiekNijland\Marktplaats\Data\SearchQuery;
 $client = new Client();
 
 $result = $client->getSearch(new SearchQuery(
-    l1CategoryId: 678,
-    postcode: '1012AB',
+    categoryId: 678,
+    postalcode: '1012AB',
     attributeRanges: [
         new AttributeRange(attribute: 'PriceCents', from: 50000, to: 800000),
     ],

@@ -109,7 +109,7 @@ class FactoryTest extends TestCase
     {
         $catalog = FilterCatalogFactory::make();
 
-        $this->assertSame(678, $catalog->l1CategoryId);
+        $this->assertSame(678, $catalog->categoryId);
         $this->assertNotEmpty($catalog->getRangeFacets());
         $this->assertNotEmpty($catalog->getGroupFacets());
     }

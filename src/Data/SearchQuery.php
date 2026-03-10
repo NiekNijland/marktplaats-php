@@ -17,20 +17,18 @@ readonly class SearchQuery
      * @param  list<AttributeRange>  $attributeRanges
      * @param  list<int>  $attributesById
      * @param  list<AttributeByKey>  $attributesByKey
-     * @param  list<int>  $excludedCategoryIds
      */
     public function __construct(
         public ?string $query = null,
-        public ?int $l1CategoryId = null,
-        public ?int $l2CategoryId = null,
-        public array $excludedCategoryIds = [],
+        public ?int $categoryId = null,
+        public ?int $subCategoryId = null,
         public int $limit = 100,
         public int $offset = 0,
         public SortBy $sortBy = SortBy::SORT_INDEX,
         public SortOrder $sortOrder = SortOrder::DECREASING,
         public bool $searchInTitleAndDescription = true,
         public ViewOptionKind $viewOptions = ViewOptionKind::GALLERY_VIEW,
-        public ?string $postcode = null,
+        public ?string $postalcode = null,
         public ?int $distanceMeters = null,
         public ?string $offerType = null,
         public array $attributeRanges = [],
@@ -44,16 +42,15 @@ readonly class SearchQuery
     {
         return new self(
             query: $this->query,
-            l1CategoryId: $this->l1CategoryId,
-            l2CategoryId: $this->l2CategoryId,
-            excludedCategoryIds: $this->excludedCategoryIds,
+            categoryId: $this->categoryId,
+            subCategoryId: $this->subCategoryId,
             limit: $this->limit,
             offset: $offset,
             sortBy: $this->sortBy,
             sortOrder: $this->sortOrder,
             searchInTitleAndDescription: $this->searchInTitleAndDescription,
             viewOptions: $this->viewOptions,
-            postcode: $this->postcode,
+            postalcode: $this->postalcode,
             distanceMeters: $this->distanceMeters,
             offerType: $this->offerType,
             attributeRanges: $this->attributeRanges,
@@ -73,12 +70,12 @@ readonly class SearchQuery
             $params['query'] = $this->query;
         }
 
-        if ($this->l1CategoryId !== null) {
-            $params['l1CategoryId'] = $this->l1CategoryId;
+        if ($this->categoryId !== null) {
+            $params['l1CategoryId'] = $this->categoryId;
         }
 
-        if ($this->l2CategoryId !== null) {
-            $params['l2CategoryId'] = $this->l2CategoryId;
+        if ($this->subCategoryId !== null) {
+            $params['l2CategoryId'] = $this->subCategoryId;
         }
 
         $params['limit'] = $this->limit;
@@ -88,8 +85,8 @@ readonly class SearchQuery
         $params['searchInTitleAndDescription'] = $this->searchInTitleAndDescription ? 'true' : 'false';
         $params['viewOptions'] = $this->viewOptions->value;
 
-        if ($this->postcode !== null) {
-            $params['postcode'] = $this->postcode;
+        if ($this->postalcode !== null) {
+            $params['postcode'] = $this->postalcode;
         }
 
         if ($this->distanceMeters !== null) {
@@ -186,8 +183,8 @@ readonly class SearchQuery
             throw new ClientException('Search offset must not be negative, got '.$this->offset);
         }
 
-        if ($this->l2CategoryId !== null && $this->l1CategoryId === null) {
-            throw new ClientException('l2CategoryId requires l1CategoryId to be set');
+        if ($this->subCategoryId !== null && $this->categoryId === null) {
+            throw new ClientException('subCategoryId requires categoryId to be set');
         }
 
         if ($this->distanceMeters !== null && $this->distanceMeters < 0) {

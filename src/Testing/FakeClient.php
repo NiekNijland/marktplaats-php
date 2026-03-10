@@ -67,9 +67,9 @@ class FakeClient implements ClientInterface
         return $this;
     }
 
-    public function getSearch(SearchQuery $query): SearchResult
+    public function getSearch(SearchQuery $query, array $excludedCategoryIds = []): SearchResult
     {
-        $this->recordedCalls[] = new RecordedCall('getSearch', [$query]);
+        $this->recordedCalls[] = new RecordedCall('getSearch', [$query, $excludedCategoryIds]);
 
         if ($this->exception instanceof ClientException) {
             throw $this->exception;
@@ -77,31 +77,31 @@ class FakeClient implements ClientInterface
 
         $result = array_shift($this->searchResults) ?? SearchResult::empty();
 
-        return $this->applyExcludedCategoryFilter($result, $query->excludedCategoryIds);
+        return $result->excludeCategories($excludedCategoryIds);
     }
 
     /**
      * @return Generator<int, Listing>
      */
-    public function getSearchAll(SearchQuery $query): Generator
+    public function getSearchAll(SearchQuery $query, array $excludedCategoryIds = []): Generator
     {
-        $this->recordedCalls[] = new RecordedCall('getSearchAll', [$query]);
+        $this->recordedCalls[] = new RecordedCall('getSearchAll', [$query, $excludedCategoryIds]);
 
         if ($this->exception instanceof ClientException) {
             throw $this->exception;
         }
 
         $result = array_shift($this->searchResults) ?? SearchResult::empty();
-        $result = $this->applyExcludedCategoryFilter($result, $query->excludedCategoryIds);
+        $result = $result->excludeCategories($excludedCategoryIds);
 
         foreach ($result->listings as $index => $listing) {
             yield $index => $listing;
         }
     }
 
-    public function getCategoryCatalog(int $l1CategoryId): CategoryCatalog
+    public function getCategoryCatalog(int $categoryId): CategoryCatalog
     {
-        $this->recordedCalls[] = new RecordedCall('getCategoryCatalog', [$l1CategoryId]);
+        $this->recordedCalls[] = new RecordedCall('getCategoryCatalog', [$categoryId]);
 
         if ($this->exception instanceof ClientException) {
             throw $this->exception;
@@ -114,9 +114,9 @@ class FakeClient implements ClientInterface
         return $this->categoryCatalog;
     }
 
-    public function getFilterCatalog(int $l1CategoryId, ?int $l2CategoryId = null): FilterCatalog
+    public function getFilterCatalog(int $categoryId, ?int $subCategoryId = null): FilterCatalog
     {
-        $this->recordedCalls[] = new RecordedCall('getFilterCatalog', [$l1CategoryId, $l2CategoryId]);
+        $this->recordedCalls[] = new RecordedCall('getFilterCatalog', [$categoryId, $subCategoryId]);
 
         if ($this->exception instanceof ClientException) {
             throw $this->exception;
@@ -127,37 +127,6 @@ class FakeClient implements ClientInterface
         }
 
         return $this->filterCatalog;
-    }
-
-    /**
-     * @param  list<int>  $excludedCategoryIds
-     */
-    private function applyExcludedCategoryFilter(SearchResult $result, array $excludedCategoryIds): SearchResult
-    {
-        if ($excludedCategoryIds === []) {
-            return $result;
-        }
-
-        $filtered = array_values(array_filter(
-            $result->listings,
-            fn (Listing $listing): bool => $listing->categoryId === null
-                || ! in_array($listing->categoryId, $excludedCategoryIds, true),
-        ));
-
-        return new SearchResult(
-            listings: $filtered,
-            topBlock: $result->topBlock,
-            facets: $result->facets,
-            totalResultCount: $result->totalResultCount,
-            maxAllowedPageNumber: $result->maxAllowedPageNumber,
-            correlationId: $result->correlationId,
-            originalQuery: $result->originalQuery,
-            sortOptions: $result->sortOptions,
-            searchCategory: $result->searchCategory,
-            searchCategoryOptions: $result->searchCategoryOptions,
-            searchRequest: $result->searchRequest,
-            metaTags: $result->metaTags,
-        );
     }
 
     public function getListing(string $url): ListingDetail

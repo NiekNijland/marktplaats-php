@@ -174,8 +174,8 @@ class ParserTest extends TestCase
         $result = $this->parser->parseJson($json);
 
         $this->assertNotNull($result->searchRequest);
-        $this->assertSame(678, $result->searchRequest->categories->l1CategoryId);
-        $this->assertSame('motoren', $result->searchRequest->categories->l1CategoryKey);
+        $this->assertSame(678, $result->searchRequest->categories->category?->id);
+        $this->assertSame('motoren', $result->searchRequest->categories->category?->key);
         $this->assertSame('SORT_INDEX', $result->searchRequest->sortOptions->sortBy);
     }
 

@@ -19,7 +19,7 @@ class ClientTest extends TestCase
     public function test_search_returns_search_result(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $result = $client->getSearch(new SearchQuery(l1CategoryId: 678));
+        $result = $client->getSearch(new SearchQuery(categoryId: 678));
 
         $this->assertSame(3, $result->totalResultCount);
         $this->assertCount(3, $result->listings);
@@ -119,7 +119,7 @@ class ClientTest extends TestCase
             cache: $cache,
         );
 
-        $query = new SearchQuery(l1CategoryId: 678);
+        $query = new SearchQuery(categoryId: 678);
 
         // First call - fetches from API
         $result1 = $client->getSearch($query);
@@ -142,7 +142,7 @@ class ClientTest extends TestCase
             httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
         );
 
-        $query = new SearchQuery(l1CategoryId: 678);
+        $query = new SearchQuery(categoryId: 678);
         $client->getSearch($query);
         $client->getSearch($query);
 
@@ -153,11 +153,8 @@ class ClientTest extends TestCase
     public function test_search_excluded_categories_filters_listings(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $query = new SearchQuery(
-            l1CategoryId: 678,
-            excludedCategoryIds: [723, 724],
-        );
-        $result = $client->getSearch($query);
+        $query = new SearchQuery(categoryId: 678);
+        $result = $client->getSearch($query, [723, 724]);
 
         // Original fixture has 3 listings: categoryId 696, 710, 723
         // Category 723 is excluded by query
@@ -171,7 +168,7 @@ class ClientTest extends TestCase
     public function test_search_without_exclusions_returns_all(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $query = new SearchQuery(l1CategoryId: 678);
+        $query = new SearchQuery(categoryId: 678);
         $result = $client->getSearch($query);
 
         $this->assertCount(3, $result->listings);
@@ -180,11 +177,8 @@ class ClientTest extends TestCase
     public function test_search_excluded_categories_preserves_original_total_count(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $query = new SearchQuery(
-            l1CategoryId: 678,
-            excludedCategoryIds: [723, 724],
-        );
-        $result = $client->getSearch($query);
+        $query = new SearchQuery(categoryId: 678);
+        $result = $client->getSearch($query, [723, 724]);
 
         // totalResultCount is the original API count, not the filtered count
         $this->assertSame(3, $result->totalResultCount);
@@ -193,7 +187,7 @@ class ClientTest extends TestCase
     public function test_get_search_all_yields_listings(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $query = new SearchQuery(l1CategoryId: 678);
+        $query = new SearchQuery(categoryId: 678);
 
         $listings = [];
 
@@ -209,12 +203,9 @@ class ClientTest extends TestCase
     public function test_get_search_all_applies_excluded_categories(): void
     {
         $client = $this->createClientWithFixture('search-motorcycles.json');
-        $query = new SearchQuery(
-            l1CategoryId: 678,
-            excludedCategoryIds: [723],
-        );
+        $query = new SearchQuery(categoryId: 678);
 
-        $listings = iterator_to_array($client->getSearchAll($query));
+        $listings = iterator_to_array($client->getSearchAll($query, [723]));
 
         $this->assertCount(2, $listings);
     }
@@ -247,12 +238,9 @@ class ClientTest extends TestCase
             httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
         );
 
-        $query = new SearchQuery(
-            l1CategoryId: 678,
-            excludedCategoryIds: [723],
-        );
+        $query = new SearchQuery(categoryId: 678);
 
-        $listings = iterator_to_array($client->getSearchAll($query));
+        $listings = iterator_to_array($client->getSearchAll($query, [723]));
 
         $this->assertCount(1, $listings);
         $this->assertSame('m-ok-1', $listings[0]->itemId);
@@ -277,10 +265,7 @@ class ClientTest extends TestCase
             httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
         );
 
-        $result = $client->getSearch(new SearchQuery(
-            l1CategoryId: 678,
-            excludedCategoryIds: [723],
-        ));
+        $result = $client->getSearch(new SearchQuery(categoryId: 678), [723]);
 
         $this->assertCount(1, $result->listings);
         $this->assertSame('m-null-cat', $result->listings[0]->itemId);
@@ -342,8 +327,8 @@ class ClientTest extends TestCase
         $client = $this->createClientWithFixture('search-motorcycles.json');
         $catalog = $client->getFilterCatalog(678);
 
-        $this->assertSame(678, $catalog->l1CategoryId);
-        $this->assertNull($catalog->l2CategoryId);
+        $this->assertSame(678, $catalog->categoryId);
+        $this->assertNull($catalog->subCategoryId);
         $this->assertNotEmpty($catalog->facets);
         $this->assertNotEmpty($catalog->getRangeFacets());
         $this->assertNotEmpty($catalog->getGroupFacets());
@@ -374,8 +359,8 @@ class ClientTest extends TestCase
         $client = $this->createClientWithFixture('search-motorcycles.json');
         $catalog = $client->getFilterCatalog(678, 696);
 
-        $this->assertSame(678, $catalog->l1CategoryId);
-        $this->assertSame(696, $catalog->l2CategoryId);
+        $this->assertSame(678, $catalog->categoryId);
+        $this->assertSame(696, $catalog->subCategoryId);
     }
 
     public function test_search_query_with_l1_and_l2_category(): void
@@ -383,8 +368,8 @@ class ClientTest extends TestCase
         $client = $this->createClientWithFixture('search-motorcycles-honda.json');
 
         $query = new SearchQuery(
-            l1CategoryId: 678,
-            l2CategoryId: 696,
+            categoryId: 678,
+            subCategoryId: 696,
         );
 
         $result = $client->getSearch($query);

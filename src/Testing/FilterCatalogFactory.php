@@ -16,8 +16,8 @@ class FilterCatalogFactory
      */
     public static function make(
         ?array $facets = null,
-        int $l1CategoryId = 678,
-        ?int $l2CategoryId = null,
+        int $categoryId = 678,
+        ?int $subCategoryId = null,
         ?DateTimeImmutable $discoveredAt = null,
     ): FilterCatalog {
         return new FilterCatalog(
@@ -53,8 +53,8 @@ class FilterCatalogFactory
                     ],
                 ),
             ],
-            l1CategoryId: $l1CategoryId,
-            l2CategoryId: $l2CategoryId,
+            categoryId: $categoryId,
+            subCategoryId: $subCategoryId,
             discoveredAt: $discoveredAt ?? new DateTimeImmutable,
         );
     }

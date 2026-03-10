@@ -15,7 +15,7 @@ class IntegrationTest extends TestCase
     {
         $client = new Client;
         $query = new SearchQuery(
-            l1CategoryId: 678,
+            categoryId: 678,
             limit: 5,
         );
 
@@ -39,11 +39,10 @@ class IntegrationTest extends TestCase
     {
         $client = new Client;
         $query = new SearchQuery(
-            l1CategoryId: 678,
-            excludedCategoryIds: [723, 724],
+            categoryId: 678,
             limit: 5,
         );
-        $result = $client->getSearch($query);
+        $result = $client->getSearch($query, [723, 724]);
 
         $this->assertGreaterThanOrEqual(0, $result->totalResultCount);
     }
@@ -66,7 +65,7 @@ class IntegrationTest extends TestCase
         $client = new Client;
         $catalog = $client->getFilterCatalog(678);
 
-        $this->assertSame(678, $catalog->l1CategoryId);
+        $this->assertSame(678, $catalog->categoryId);
         $this->assertNotEmpty($catalog->facets);
     }
 }

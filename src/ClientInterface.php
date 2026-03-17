@@ -16,6 +16,21 @@ use NiekNijland\Marktplaats\Exception\ClientException;
 interface ClientInterface
 {
     /**
+     * @phpstan-return array{
+     *     requests: int,
+     *     successes: int,
+     *     failures: int,
+     *     retries: int,
+     *     session_resets: int,
+     *     last_request_at: ?float,
+     *     total_sleep_ms: float,
+     * }
+     */
+    public function getStats(): array;
+
+    public function resetStats(): void;
+
+    /**
      * @param  list<int>  $excludedCategoryIds
      *
      * @throws ClientException

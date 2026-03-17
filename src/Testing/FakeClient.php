@@ -20,6 +20,27 @@ class FakeClient implements ClientInterface
     /** @var RecordedCall[] */
     private array $recordedCalls = [];
 
+    /**
+     * @var array{
+     *     requests: int,
+     *     successes: int,
+     *     failures: int,
+     *     retries: int,
+     *     session_resets: int,
+     *     last_request_at: ?float,
+     *     total_sleep_ms: float,
+     * }
+     */
+    private array $stats = [
+        'requests' => 0,
+        'successes' => 0,
+        'failures' => 0,
+        'retries' => 0,
+        'session_resets' => 0,
+        'last_request_at' => null,
+        'total_sleep_ms' => 0.0,
+    ];
+
     /** @var SearchResult[] */
     private array $searchResults = [];
 
@@ -67,15 +88,57 @@ class FakeClient implements ClientInterface
         return $this;
     }
 
+    /**
+     * @param  array{
+     *     requests?: int,
+     *     successes?: int,
+     *     failures?: int,
+     *     retries?: int,
+     *     session_resets?: int,
+     *     last_request_at?: ?float,
+     *     total_sleep_ms?: float,
+     * }  $stats
+     */
+    public function seedStats(array $stats): self
+    {
+        $this->stats = array_replace($this->stats, $stats);
+
+        return $this;
+    }
+
+    public function getStats(): array
+    {
+        $this->recordedCalls[] = new RecordedCall('getStats', []);
+
+        return $this->stats;
+    }
+
+    public function resetStats(): void
+    {
+        $this->recordedCalls[] = new RecordedCall('resetStats', []);
+        $this->stats = [
+            'requests' => 0,
+            'successes' => 0,
+            'failures' => 0,
+            'retries' => 0,
+            'session_resets' => 0,
+            'last_request_at' => null,
+            'total_sleep_ms' => 0.0,
+        ];
+    }
+
     public function getSearch(SearchQuery $query, array $excludedCategoryIds = []): SearchResult
     {
         $this->recordedCalls[] = new RecordedCall('getSearch', [$query, $excludedCategoryIds]);
+        $this->recordRequest();
 
         if ($this->exception instanceof ClientException) {
+            $this->stats['failures']++;
             throw $this->exception;
         }
 
         $result = array_shift($this->searchResults) ?? SearchResult::empty();
+        $this->stats['successes']++;
 
         return $result->excludeCategories($excludedCategoryIds);
     }
@@ -86,13 +149,16 @@ class FakeClient implements ClientInterface
     public function getSearchAll(SearchQuery $query, array $excludedCategoryIds = []): Generator
     {
         $this->recordedCalls[] = new RecordedCall('getSearchAll', [$query, $excludedCategoryIds]);
+        $this->recordRequest();
 
         if ($this->exception instanceof ClientException) {
+            $this->stats['failures']++;
             throw $this->exception;
         }
 
         $result = array_shift($this->searchResults) ?? SearchResult::empty();
         $result = $result->excludeCategories($excludedCategoryIds);
+        $this->stats['successes']++;
 
         foreach ($result->listings as $index => $listing) {
             yield $index => $listing;
@@ -102,14 +168,19 @@ class FakeClient implements ClientInterface
     public function getCategoryCatalog(int $categoryId): CategoryCatalog
     {
         $this->recordedCalls[] = new RecordedCall('getCategoryCatalog', [$categoryId]);
+        $this->recordRequest();
 
         if ($this->exception instanceof ClientException) {
+            $this->stats['failures']++;
             throw $this->exception;
         }
 
         if (! $this->categoryCatalog instanceof CategoryCatalog) {
+            $this->stats['failures']++;
             throw new ClientException('No category catalog seeded in FakeClient');
         }
+
+        $this->stats['successes']++;
 
         return $this->categoryCatalog;
     }
@@ -117,14 +188,19 @@ class FakeClient implements ClientInterface
     public function getFilterCatalog(int $categoryId, ?int $subCategoryId = null): FilterCatalog
     {
         $this->recordedCalls[] = new RecordedCall('getFilterCatalog', [$categoryId, $subCategoryId]);
+        $this->recordRequest();
 
         if ($this->exception instanceof ClientException) {
+            $this->stats['failures']++;
             throw $this->exception;
         }
 
         if (! $this->filterCatalog instanceof FilterCatalog) {
+            $this->stats['failures']++;
             throw new ClientException('No filter catalog seeded in FakeClient');
         }
+
+        $this->stats['successes']++;
 
         return $this->filterCatalog;
     }
@@ -132,14 +208,19 @@ class FakeClient implements ClientInterface
     public function getListing(string $url): ListingDetail
     {
         $this->recordedCalls[] = new RecordedCall('getListing', [$url]);
+        $this->recordRequest();
 
         if ($this->exception instanceof ClientException) {
+            $this->stats['failures']++;
             throw $this->exception;
         }
 
         if ($this->listingDetails === []) {
+            $this->stats['failures']++;
             throw new ClientException('No listing detail seeded in FakeClient');
         }
+
+        $this->stats['successes']++;
 
         return array_shift($this->listingDetails);
     }
@@ -147,6 +228,7 @@ class FakeClient implements ClientInterface
     public function resetSession(): void
     {
         $this->recordedCalls[] = new RecordedCall('resetSession', []);
+        $this->stats['session_resets']++;
     }
 
     /**
@@ -188,5 +270,11 @@ class FakeClient implements ClientInterface
             $this->recordedCalls,
             fn (RecordedCall $call): bool => $call->method === $method,
         ));
+    }
+
+    private function recordRequest(): void
+    {
+        $this->stats['requests']++;
+        $this->stats['last_request_at'] = microtime(true);
     }
 }

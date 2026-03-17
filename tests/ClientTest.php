@@ -13,7 +13,11 @@ use NiekNijland\Marktplaats\Client;
 use NiekNijland\Marktplaats\Data\Category;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Exception\ClientException;
+use NiekNijland\Marktplaats\Support\HttpTransport;
+use NiekNijland\Marktplaats\Testing\FakeClock;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use ReflectionClass;
 
 class ClientTest extends TestCase
 {
@@ -517,6 +521,123 @@ class ClientTest extends TestCase
         $client->getListing('https://www.marktplaats.nl/v/motoren/nonexistent');
     }
 
+    public function test_search_requests_include_api_browser_headers(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $history = [];
+
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+        ]);
+
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => $stack]),
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $this->assertCount(1, $history);
+        $request = $history[0]['request'];
+
+        $this->assertSame('application/json, text/plain, */*', $request->getHeaderLine('Accept'));
+        $this->assertSame('nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7', $request->getHeaderLine('Accept-Language'));
+        $this->assertSame('gzip, deflate', $request->getHeaderLine('Accept-Encoding'));
+        $this->assertStringContainsString('Chrome/131.0.0.0', $request->getHeaderLine('User-Agent'));
+        $this->assertFalse($request->hasHeader('Upgrade-Insecure-Requests'));
+    }
+
+    public function test_listing_requests_include_document_browser_headers(): void
+    {
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, [], $this->loadFixture('listing-detail.html')),
+        ]);
+
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => $stack]),
+        );
+
+        $client->getListing('https://www.marktplaats.nl/v/motoren/honda/m2355451324-test');
+
+        $this->assertCount(1, $history);
+        $request = $history[0]['request'];
+
+        $this->assertSame(
+            'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            $request->getHeaderLine('Accept'),
+        );
+        $this->assertSame('1', $request->getHeaderLine('Upgrade-Insecure-Requests'));
+        $this->assertSame('nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7', $request->getHeaderLine('Accept-Language'));
+    }
+
+    public function test_custom_headers_override_built_in_profiles(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+        ]);
+
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => $stack]),
+            defaultHeaders: [
+                'User-Agent' => 'Custom Agent',
+                'Accept' => 'application/custom',
+                'X-Test' => 'anti-blocking',
+            ],
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $request = $history[0]['request'];
+
+        $this->assertSame('Custom Agent', $request->getHeaderLine('User-Agent'));
+        $this->assertSame('application/custom', $request->getHeaderLine('Accept'));
+        $this->assertSame('anti-blocking', $request->getHeaderLine('X-Test'));
+        $this->assertFalse($request->hasHeader('Accept-Language'));
+        $this->assertFalse($request->hasHeader('Upgrade-Insecure-Requests'));
+    }
+
+    public function test_cookie_header_coexists_with_default_headers(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $history = [];
+
+        $mock = new MockHandler([
+            new Response(200, ['Set-Cookie' => 'session=abc123; Path=/'], $fixture),
+            new Response(200, [], $fixture),
+        ]);
+
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => $stack]),
+            defaultHeaders: [
+                'User-Agent' => 'Custom Agent',
+                'Accept' => 'application/custom',
+                'Cookie' => 'custom=ignored',
+            ],
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+
+        $this->assertCount(2, $history);
+        $this->assertSame('Custom Agent', $history[1]['request']->getHeaderLine('User-Agent'));
+        $this->assertSame('application/custom', $history[1]['request']->getHeaderLine('Accept'));
+        $this->assertSame('session=abc123', $history[1]['request']->getHeaderLine('Cookie'));
+    }
+
     public function test_reset_session_clears_cookie_header_for_follow_up_requests(): void
     {
         $fixture = $this->loadFixture('search-motorcycles.json');
@@ -546,6 +667,181 @@ class ClientTest extends TestCase
         $this->assertFalse($history[2]['request']->hasHeader('Cookie'));
     }
 
+    public function test_fake_clock_records_sleep_calls(): void
+    {
+        $clock = new FakeClock;
+
+        $clock->sleepMilliseconds(150);
+        $clock->sleepMilliseconds(75);
+
+        $this->assertSame([150, 75], $clock->getSleepCalls());
+    }
+
+    public function test_negative_request_delay_throws(): void
+    {
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('requestDelayMilliseconds must be 0 or greater');
+
+        new Client(requestDelayMilliseconds: -1);
+    }
+
+    public function test_negative_request_delay_jitter_throws(): void
+    {
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('requestDelayJitterMilliseconds must be 0 or greater');
+
+        new Client(requestDelayJitterMilliseconds: -1);
+    }
+
+    public function test_request_delay_zero_does_not_sleep(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $clock = new FakeClock;
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            clock: $clock,
+            requestDelayMilliseconds: 0,
+            requestDelayJitterMilliseconds: 100,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+
+        $this->assertSame([], $clock->getSleepCalls());
+    }
+
+    public function test_request_delay_applied_between_requests(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $clock = new FakeClock;
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+            new Response(200, [], $fixture),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            clock: $clock,
+            requestDelayMilliseconds: 150,
+            requestDelayJitterMilliseconds: 0,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 2));
+
+        $this->assertSame([150, 150], $clock->getSleepCalls());
+    }
+
+    public function test_no_delay_on_first_request(): void
+    {
+        $clock = new FakeClock;
+        $mock = new MockHandler([
+            new Response(200, [], $this->loadFixture('search-motorcycles.json')),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            clock: $clock,
+            requestDelayMilliseconds: 150,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $this->assertSame([], $clock->getSleepCalls());
+    }
+
+    public function test_retries_on_403_when_configured(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+
+        $mock = new MockHandler([
+            new Response(403),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRetries: 1,
+            retryDelayMilliseconds: 0,
+        );
+
+        $result = $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $this->assertSame(3, $result->totalResultCount);
+    }
+
+    public function test_403_resets_session_before_retry(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $history = [];
+
+        $mock = new MockHandler([
+            new Response(200, ['Set-Cookie' => 'session=abc123; Path=/'], $fixture),
+            new Response(403),
+            new Response(200, [], $fixture),
+        ]);
+
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => $stack]),
+            maxRetries: 1,
+            retryDelayMilliseconds: 0,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+
+        $this->assertCount(3, $history);
+        $this->assertFalse($history[0]['request']->hasHeader('Cookie'));
+        $this->assertSame('session=abc123', $history[1]['request']->getHeaderLine('Cookie'));
+        $this->assertFalse($history[2]['request']->hasHeader('Cookie'));
+    }
+
+    public function test_403_throws_when_retries_exhausted(): void
+    {
+        $mock = new MockHandler([
+            new Response(403),
+            new Response(403),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRetries: 1,
+            retryDelayMilliseconds: 0,
+        );
+
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('authorization error');
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+    }
+
+    public function test_403_throws_when_no_retries_configured(): void
+    {
+        $mock = new MockHandler([
+            new Response(403),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRetries: 0,
+        );
+
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('authorization error');
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+    }
+
     public function test_retries_on_429_when_configured(): void
     {
         $fixture = $this->loadFixture('search-motorcycles.json');
@@ -566,6 +862,275 @@ class ClientTest extends TestCase
         $this->assertSame(3, $result->totalResultCount);
     }
 
+    public function test_retry_delay_has_jitter(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $clock = new FakeClock;
+        $mock = new MockHandler([
+            new Response(429),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            clock: $clock,
+            maxRetries: 1,
+            retryDelayMilliseconds: 100,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $this->assertCount(1, $clock->getSleepCalls());
+        $this->assertGreaterThanOrEqual(75, $clock->getSleepCalls()[0]);
+        $this->assertLessThanOrEqual(125, $clock->getSleepCalls()[0]);
+    }
+
+    public function test_retry_with_zero_delay_does_not_sleep(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $clock = new FakeClock;
+        $mock = new MockHandler([
+            new Response(429),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            clock: $clock,
+            maxRetries: 1,
+            retryDelayMilliseconds: 0,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $this->assertSame([], $clock->getSleepCalls());
+    }
+
+    public function test_negative_max_requests_per_window_throws(): void
+    {
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('maxRequestsPerWindow must be 0 or greater');
+
+        new Client(maxRequestsPerWindow: -1);
+    }
+
+    public function test_request_window_limit_throws_when_limit_reached(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRequestsPerWindow: 1,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('resetStats()');
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+    }
+
+    public function test_request_window_limit_resets_after_reset_stats(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRequestsPerWindow: 1,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->resetStats();
+        $result = $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+
+        $this->assertSame(3, $result->totalResultCount);
+        $this->assertSame(1, $client->getStats()['requests']);
+    }
+
+    public function test_request_window_zero_means_unlimited(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRequestsPerWindow: 0,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+
+        $this->assertSame(2, $client->getStats()['requests']);
+    }
+
+    public function test_stats_count_successful_requests(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+
+        $this->assertSame([
+            'requests' => 2,
+            'successes' => 2,
+            'failures' => 0,
+            'retries' => 0,
+            'session_resets' => 0,
+            'total_sleep_ms' => 0.0,
+        ], array_diff_key($client->getStats(), ['last_request_at' => true]));
+        $this->assertIsFloat($client->getStats()['last_request_at']);
+    }
+
+    public function test_stats_count_retries(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $mock = new MockHandler([
+            new Response(429),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRetries: 1,
+            retryDelayMilliseconds: 0,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $this->assertSame(2, $client->getStats()['requests']);
+        $this->assertSame(1, $client->getStats()['retries']);
+    }
+
+    public function test_stats_count_failures(): void
+    {
+        $mock = new MockHandler([
+            new Response(500),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        try {
+            $client->getSearch(new SearchQuery(categoryId: 678));
+            $this->fail('Expected exception was not thrown.');
+        } catch (ClientException) {
+            $this->assertSame(1, $client->getStats()['failures']);
+        }
+    }
+
+    public function test_stats_count_session_resets_on_403(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $mock = new MockHandler([
+            new Response(403),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRetries: 1,
+            retryDelayMilliseconds: 0,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+
+        $this->assertSame(1, $client->getStats()['session_resets']);
+    }
+
+    public function test_stats_reset_on_reset_stats(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678));
+        $client->resetStats();
+
+        $this->assertSame([
+            'requests' => 0,
+            'successes' => 0,
+            'failures' => 0,
+            'retries' => 0,
+            'session_resets' => 0,
+            'last_request_at' => null,
+            'total_sleep_ms' => 0.0,
+        ], $client->getStats());
+    }
+
+    public function test_stats_track_sleep_time(): void
+    {
+        $fixture = $this->loadFixture('search-motorcycles.json');
+        $clock = new FakeClock;
+        $mock = new MockHandler([
+            new Response(200, [], $fixture),
+            new Response(200, [], $fixture),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            clock: $clock,
+            requestDelayMilliseconds: 120,
+            requestDelayJitterMilliseconds: 0,
+        );
+
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 0));
+        $client->getSearch(new SearchQuery(categoryId: 678, offset: 1));
+
+        $this->assertSame([120], $clock->getSleepCalls());
+        $this->assertSame(120.0, $client->getStats()['total_sleep_ms']);
+    }
+
+    public function test_proxy_url_applied_to_default_guzzle_client(): void
+    {
+        $client = new Client(proxyUrl: 'http://proxy.example.test:8080');
+
+        $this->assertInstanceOf(GuzzleClient::class, $this->getUnderlyingHttpClient($client));
+        $this->assertSame(
+            'http://proxy.example.test:8080',
+            $this->getUnderlyingHttpClient($client)->getConfig('proxy'),
+        );
+    }
+
+    public function test_proxy_url_null_means_no_proxy(): void
+    {
+        $client = new Client(proxyUrl: null);
+
+        $this->assertNull($this->getUnderlyingHttpClient($client)->getConfig('proxy'));
+    }
+
+    public function test_invalid_proxy_url_throws(): void
+    {
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('proxyUrl must use http://, https://, or socks5://');
+
+        new Client(proxyUrl: 'ftp://proxy.example.test');
+    }
+
     private function createClientWithFixture(string $fixture): Client
     {
         $json = $this->loadFixture($fixture);
@@ -576,6 +1141,27 @@ class ClientTest extends TestCase
         return new Client(
             httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
         );
+    }
+
+    private function getUnderlyingHttpClient(Client $client): GuzzleClient
+    {
+        $clientReflection = new ReflectionClass($client);
+        $transportProperty = $clientReflection->getProperty('transport');
+        $transportProperty->setAccessible(true);
+
+        /** @var HttpTransport $transport */
+        $transport = $transportProperty->getValue($client);
+
+        $transportReflection = new ReflectionClass($transport);
+        $httpClientProperty = $transportReflection->getProperty('httpClient');
+        $httpClientProperty->setAccessible(true);
+
+        /** @var HttpClientInterface $httpClient */
+        $httpClient = $httpClientProperty->getValue($transport);
+
+        $this->assertInstanceOf(GuzzleClient::class, $httpClient);
+
+        return $httpClient;
     }
 
     private function loadFixture(string $filename): string

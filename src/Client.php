@@ -18,7 +18,9 @@ use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Parser\ListingDetailParser;
 use NiekNijland\Marktplaats\Parser\SearchParser;
 use NiekNijland\Marktplaats\Support\CacheStore;
+use NiekNijland\Marktplaats\Support\ClockInterface;
 use NiekNijland\Marktplaats\Support\HttpTransport;
+use NiekNijland\Marktplaats\Support\SystemClock;
 use NiekNijland\Marktplaats\Support\UrlResolver;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 use Psr\SimpleCache\CacheInterface;
@@ -33,6 +35,9 @@ class Client implements ClientInterface
 
     private readonly CacheStore $cacheStore;
 
+    /**
+     * @param  array<string, string>  $defaultHeaders
+     */
     public function __construct(
         ?HttpClientInterface $httpClient = null,
         ?CacheInterface $cache = null,
@@ -40,6 +45,12 @@ class Client implements ClientInterface
         private readonly float $requestTimeoutSeconds = 10.0,
         private readonly int $maxRetries = 0,
         private readonly int $retryDelayMilliseconds = 200,
+        private readonly array $defaultHeaders = [],
+        ?ClockInterface $clock = null,
+        private readonly int $requestDelayMilliseconds = 0,
+        private readonly int $requestDelayJitterMilliseconds = 0,
+        private readonly int $maxRequestsPerWindow = 0,
+        private readonly ?string $proxyUrl = null,
     ) {
         if ($this->requestTimeoutSeconds <= 0) {
             throw new ClientException('requestTimeoutSeconds must be greater than 0');
@@ -53,20 +64,52 @@ class Client implements ClientInterface
             throw new ClientException('retryDelayMilliseconds must be 0 or greater');
         }
 
+        if ($this->requestDelayMilliseconds < 0) {
+            throw new ClientException('requestDelayMilliseconds must be 0 or greater');
+        }
+
+        if ($this->requestDelayJitterMilliseconds < 0) {
+            throw new ClientException('requestDelayJitterMilliseconds must be 0 or greater');
+        }
+
+        if ($this->maxRequestsPerWindow < 0) {
+            throw new ClientException('maxRequestsPerWindow must be 0 or greater');
+        }
+
+        $this->assertValidProxyUrl($this->proxyUrl);
+
+        $resolvedClock = $clock ?? new SystemClock;
+
         $resolvedHttpClient = $httpClient ?? new GuzzleClient([
             'timeout' => $this->requestTimeoutSeconds,
+            'proxy' => $this->proxyUrl,
         ]);
 
         $this->transport = new HttpTransport(
             httpClient: $resolvedHttpClient,
             maxRetries: $this->maxRetries,
             retryDelayMilliseconds: $this->retryDelayMilliseconds,
+            defaultHeaders: $this->defaultHeaders,
+            clock: $resolvedClock,
+            requestDelayMilliseconds: $this->requestDelayMilliseconds,
+            requestDelayJitterMilliseconds: $this->requestDelayJitterMilliseconds,
+            maxRequestsPerWindow: $this->maxRequestsPerWindow,
         );
 
         $this->cacheStore = new CacheStore($cache, $this->cacheTtl);
 
         $this->searchParser = new SearchParser;
         $this->listingDetailParser = new ListingDetailParser;
+    }
+
+    public function getStats(): array
+    {
+        return $this->transport->getStats();
+    }
+
+    public function resetStats(): void
+    {
+        $this->transport->resetStats();
     }
 
     public function getSearch(SearchQuery $query, array $excludedCategoryIds = []): SearchResult
@@ -232,6 +275,25 @@ class Client implements ClientInterface
     public function resetSession(): void
     {
         $this->transport->resetSession();
+    }
+
+    private function assertValidProxyUrl(?string $proxyUrl): void
+    {
+        if ($proxyUrl === null) {
+            return;
+        }
+
+        $scheme = parse_url($proxyUrl, PHP_URL_SCHEME);
+
+        if (! is_string($scheme) || ! in_array($scheme, ['http', 'https', 'socks5'], true)) {
+            throw new ClientException('proxyUrl must use http://, https://, or socks5://');
+        }
+
+        $host = parse_url($proxyUrl, PHP_URL_HOST);
+
+        if (! is_string($host) || $host === '') {
+            throw new ClientException('proxyUrl must include a valid host');
+        }
     }
 
     private function resolveListingUrl(string $url): string

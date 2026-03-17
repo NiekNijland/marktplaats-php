@@ -873,9 +873,9 @@ class ClientTest extends TestCase
 
         $client = new Client(
             httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
-            clock: $clock,
             maxRetries: 1,
             retryDelayMilliseconds: 100,
+            clock: $clock,
         );
 
         $client->getSearch(new SearchQuery(categoryId: 678));
@@ -896,9 +896,9 @@ class ClientTest extends TestCase
 
         $client = new Client(
             httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
-            clock: $clock,
             maxRetries: 1,
             retryDelayMilliseconds: 0,
+            clock: $clock,
         );
 
         $client->getSearch(new SearchQuery(categoryId: 678));

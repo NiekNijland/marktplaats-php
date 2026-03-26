@@ -2,6 +2,15 @@
 
 All notable changes to `marktplaats-php` will be documented in this file.
 
+## v0.4.0 - 2026-03-26
+
+### Added
+
+- `NotFoundException` thrown on HTTP 404 responses (extends `ClientException`)
+- `GoneException` thrown on HTTP 410 responses (extends `NotFoundException`)
+
+Both are subtypes of `ClientException`, so existing catch blocks remain compatible.
+
 ## v0.2.0 - 2026-03-10
 
 Improved query structure. cleanup.

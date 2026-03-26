@@ -6,6 +6,8 @@ namespace NiekNijland\Marktplaats\Support;
 
 use GuzzleHttp\Psr7\Request;
 use NiekNijland\Marktplaats\Exception\ClientException;
+use NiekNijland\Marktplaats\Exception\GoneException;
+use NiekNijland\Marktplaats\Exception\NotFoundException;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
@@ -123,6 +125,14 @@ class HttpTransport
             }
 
             $this->failureCount++;
+
+            if ($statusCode === 410) {
+                throw new GoneException($this->buildStatusErrorMessage($statusCode), $statusCode);
+            }
+
+            if ($statusCode === 404) {
+                throw new NotFoundException($this->buildStatusErrorMessage($statusCode), $statusCode);
+            }
 
             throw new ClientException($this->buildStatusErrorMessage($statusCode), $statusCode);
         }

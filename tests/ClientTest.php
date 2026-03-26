@@ -13,6 +13,8 @@ use NiekNijland\Marktplaats\Client;
 use NiekNijland\Marktplaats\Data\Category;
 use NiekNijland\Marktplaats\Data\SearchQuery;
 use NiekNijland\Marktplaats\Exception\ClientException;
+use NiekNijland\Marktplaats\Exception\GoneException;
+use NiekNijland\Marktplaats\Exception\NotFoundException;
 use NiekNijland\Marktplaats\Support\HttpTransport;
 use NiekNijland\Marktplaats\Testing\FakeClock;
 use PHPUnit\Framework\TestCase;
@@ -505,7 +507,7 @@ class ClientTest extends TestCase
         $this->assertSame($detail1->title, $detail2->title);
     }
 
-    public function test_get_listing_404_throws(): void
+    public function test_get_listing_404_throws_not_found_exception(): void
     {
         $mock = new MockHandler([
             new Response(404),
@@ -515,10 +517,35 @@ class ClientTest extends TestCase
             httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
         );
 
-        $this->expectException(ClientException::class);
+        $this->expectException(NotFoundException::class);
         $this->expectExceptionMessage('not found');
+        $this->expectExceptionCode(404);
 
         $client->getListing('https://www.marktplaats.nl/v/motoren/nonexistent');
+    }
+
+    public function test_get_listing_410_throws_gone_exception(): void
+    {
+        $mock = new MockHandler([
+            new Response(410),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $this->expectException(GoneException::class);
+        $this->expectExceptionCode(410);
+
+        $client->getListing('https://www.marktplaats.nl/v/motoren/removed');
+    }
+
+    public function test_gone_exception_is_instance_of_not_found_exception(): void
+    {
+        $exception = new GoneException('Gone', 410);
+
+        $this->assertInstanceOf(NotFoundException::class, $exception);
+        $this->assertInstanceOf(ClientException::class, $exception);
     }
 
     public function test_search_requests_include_api_browser_headers(): void

@@ -1,0 +1,7 @@
+<?php
+
+declare(strict_types=1);
+
+namespace NiekNijland\Marktplaats\Exception;
+
+class GoneException extends NotFoundException {}

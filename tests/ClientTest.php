@@ -481,6 +481,36 @@ class ClientTest extends TestCase
         $this->assertNotEmpty($detail->itemId);
     }
 
+    public function test_get_listing_follows_redirect_response(): void
+    {
+        $history = [];
+        $html = $this->loadFixture('listing-detail.html');
+        $mock = new MockHandler([
+            new Response(301, ['Location' => '/v/motoren/yamaha/m2355451324-test-listing']),
+            new Response(200, [], $html),
+        ]);
+
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => $stack]),
+        );
+
+        $detail = $client->getListing('https://www.marktplaats.nl/v/motoren/honda/m2355451324-test');
+
+        $this->assertSame('m2355451324', $detail->itemId);
+        $this->assertCount(2, $history);
+        $this->assertSame(
+            'https://www.marktplaats.nl/v/motoren/honda/m2355451324-test',
+            (string) $history[0]['request']->getUri(),
+        );
+        $this->assertSame(
+            'https://www.marktplaats.nl/v/motoren/yamaha/m2355451324-test-listing',
+            (string) $history[1]['request']->getUri(),
+        );
+    }
+
     public function test_get_listing_caches_result(): void
     {
         $html = $this->loadFixture('listing-detail.html');

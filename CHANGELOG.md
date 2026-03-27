@@ -2,6 +2,13 @@
 
 All notable changes to `marktplaats-php` will be documented in this file.
 
+## v0.4.1 - 2026-03-27
+
+### Changed
+
+- Follow HTTP redirects for listing detail requests, including relative `Location` headers.
+- Added redirect coverage for `Client::getListing()` to prevent canonical Marktplaats listing URLs from failing on `301` responses.
+
 ## v0.4.0 - 2026-03-26
 
 ### Added

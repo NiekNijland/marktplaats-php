@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace NiekNijland\Marktplaats\Support;
 
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
 use NiekNijland\Marktplaats\Exception\ClientException;
 use NiekNijland\Marktplaats\Exception\GoneException;
 use NiekNijland\Marktplaats\Exception\NotFoundException;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Psr\Http\Message\ResponseInterface;
 
 class HttpTransport
 {
     private const string SEARCH_ENDPOINT_PATH = '/lrp/api/search';
+
+    private const int MAX_REDIRECTS = 5;
 
     /** @var array<string, string> */
     private const array COMMON_BROWSER_HEADERS = [
@@ -76,12 +81,14 @@ class HttpTransport
         $this->operationCount++;
 
         $attempt = 0;
+        $redirectCount = 0;
+        $currentUrl = $url;
 
         while (true) {
             $attempt++;
 
             try {
-                $request = $this->buildRequest($url);
+                $request = $this->buildRequest($currentUrl);
                 $this->trackRequestAttempt();
                 $response = $this->httpClient->sendRequest($request);
             } catch (ClientExceptionInterface $e) {
@@ -100,6 +107,28 @@ class HttpTransport
             $this->captureSessionCookies($response->getHeader('Set-Cookie'));
 
             $statusCode = $response->getStatusCode();
+
+            if ($this->isRedirectStatusCode($statusCode)) {
+                $redirectUrl = $this->resolveRedirectUrl($currentUrl, $response);
+
+                if ($redirectUrl === null) {
+                    $this->failureCount++;
+
+                    throw new ClientException('Marktplaats redirect response missing Location header', $statusCode);
+                }
+
+                if ($redirectCount >= self::MAX_REDIRECTS) {
+                    $this->failureCount++;
+
+                    throw new ClientException('Marktplaats redirect limit exceeded', $statusCode);
+                }
+
+                $currentUrl = $redirectUrl;
+                $redirectCount++;
+                $attempt = 0;
+
+                continue;
+            }
 
             if ($this->shouldRetryStatusCode($statusCode) && $this->shouldRetryAttempt($attempt)) {
                 if ($statusCode === 403) {
@@ -210,6 +239,11 @@ class HttpTransport
         return $statusCode === 403 || $statusCode === 429 || $statusCode >= 500;
     }
 
+    private function isRedirectStatusCode(int $statusCode): bool
+    {
+        return in_array($statusCode, [301, 302, 303, 307, 308], true);
+    }
+
     private function shouldRetryAttempt(int $attempt): bool
     {
         return $attempt <= $this->maxRetries;
@@ -249,6 +283,17 @@ class HttpTransport
         }
 
         return $this->withSessionCookies($request);
+    }
+
+    private function resolveRedirectUrl(string $url, ResponseInterface $response): ?string
+    {
+        $location = trim($response->getHeaderLine('Location'));
+
+        if ($location === '') {
+            return null;
+        }
+
+        return (string) UriResolver::resolve(new Uri($url), new Uri($location));
     }
 
     private function trackRequestAttempt(): void

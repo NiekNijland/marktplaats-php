@@ -2,6 +2,14 @@
 
 All notable changes to `marktplaats-php` will be documented in this file.
 
+## v0.4.2 - 2026-04-04
+
+### Summary
+
+- detect expired Marktplaats detail pages even when the response status is 200
+- throw GoneException for verlopen detail shells so downstream apps can mark listings unavailable
+- add regression coverage for parser and client expired-page handling
+
 ## v0.4.1 - 2026-03-27
 
 ### Changed

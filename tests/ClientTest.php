@@ -570,6 +570,31 @@ class ClientTest extends TestCase
         $client->getListing('https://www.marktplaats.nl/v/motoren/removed');
     }
 
+    public function test_get_listing_200_expired_page_throws_gone_exception(): void
+    {
+        $expiredHtml = '<!doctype html><html lang="nl"><body><h1>Deze advertentie is helaas verlopen</h1><script>window.__CONFIG__ = '.json_encode([
+            'itemId' => 'm2373093381',
+            'eVipSimilarItems' => [
+                [
+                    'title' => 'Alternative listing',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR).';</script></body></html>';
+
+        $mock = new MockHandler([
+            new Response(200, [], $expiredHtml),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        $this->expectException(GoneException::class);
+        $this->expectExceptionCode(410);
+
+        $client->getListing('https://www.marktplaats.nl/v/motoren/removed-but-200');
+    }
+
     public function test_gone_exception_is_instance_of_not_found_exception(): void
     {
         $exception = new GoneException('Gone', 410);

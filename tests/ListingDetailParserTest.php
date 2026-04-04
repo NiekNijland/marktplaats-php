@@ -10,6 +10,7 @@ use NiekNijland\Marktplaats\Data\Enums\SellerType;
 use NiekNijland\Marktplaats\Data\ListingDetail;
 use NiekNijland\Marktplaats\Data\ListingDetailAttribute;
 use NiekNijland\Marktplaats\Exception\ClientException;
+use NiekNijland\Marktplaats\Exception\GoneException;
 use NiekNijland\Marktplaats\Parser\ListingDetailParser;
 use PHPUnit\Framework\TestCase;
 
@@ -38,6 +39,26 @@ class ListingDetailParserTest extends TestCase
         $this->assertInstanceOf(ListingDetail::class, $detail);
         $this->assertSame('m2355451324', $detail->itemId);
         $this->assertSame('Yamaha MT-07 ABS + handvatverwarming', $detail->title);
+    }
+
+    public function test_parse_html_throws_gone_exception_for_expired_listing_page(): void
+    {
+        $html = '<!doctype html><html lang="nl"><body><h1>Deze advertentie is helaas verlopen</h1><script>window.__CONFIG__ = '.json_encode([
+            'itemId' => 'm2373093381',
+            'eVipSimilarItems' => [
+                [
+                    'title' => 'Alternative listing',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR).';</script></body></html>';
+
+        $this->expectException(GoneException::class);
+        $this->expectExceptionCode(410);
+
+        $this->parser->parseHtml(
+            $html,
+            '/v/motoren/motoren-honda/m2373093381-gezocht-honda-cbr-600rr-geel',
+        );
     }
 
     public function test_parse_html_extracts_description(): void

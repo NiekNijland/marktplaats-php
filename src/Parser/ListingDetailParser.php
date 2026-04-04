@@ -20,6 +20,7 @@ use NiekNijland\Marktplaats\Data\ListingDetailShipping;
 use NiekNijland\Marktplaats\Data\ListingDetailStats;
 use NiekNijland\Marktplaats\Data\PriceInfo;
 use NiekNijland\Marktplaats\Exception\ClientException;
+use NiekNijland\Marktplaats\Exception\GoneException;
 use NiekNijland\Marktplaats\Support\UrlResolver;
 
 class ListingDetailParser
@@ -27,6 +28,11 @@ class ListingDetailParser
     public function parseHtml(string $html, string $url): ListingDetail
     {
         $configData = $this->extractConfigJson($html);
+
+        if ($this->isExpiredListingPage($html, $configData)) {
+            throw new GoneException('Marktplaats listing is no longer available', 410);
+        }
+
         $xpath = $this->createXPath($html);
         $description = $this->extractDescriptionFromXPath($xpath);
         $attributes = $this->extractAttributesFromXPath($xpath);
@@ -422,6 +428,39 @@ class ListingDetailParser
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $configData
+     */
+    private function isExpiredListingPage(string $html, array $configData): bool
+    {
+        if (preg_match('/Deze advertentie is helaas verlopen/i', $html) === 1) {
+            return true;
+        }
+
+        $pageType = $this->toNullableString($configData['pageType'] ?? null);
+
+        if ($pageType !== null && strtolower($pageType) === 'expired') {
+            return true;
+        }
+
+        $listing = $configData['listing'] ?? null;
+
+        if (is_array($listing)) {
+            $status = $this->toNullableString($listing['status'] ?? null);
+            $state = $this->toNullableString($listing['state'] ?? null);
+
+            if ($status !== null && in_array(strtolower($status), ['expired', 'removed', 'closed'], true)) {
+                return true;
+            }
+
+            if ($state !== null && in_array(strtolower($state), ['expired', 'removed', 'closed'], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

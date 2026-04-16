@@ -49,6 +49,8 @@ class HttpTransport
 
     private int $failureCount = 0;
 
+    private int $contentFailureCount = 0;
+
     private int $retryCount = 0;
 
     private int $sessionResetCount = 0;
@@ -153,7 +155,16 @@ class HttpTransport
                 return (string) $response->getBody();
             }
 
-            $this->failureCount++;
+            // HTTP >= 500 is an upstream server error — transport-style from
+            // the caller's perspective. Everything else that reaches here is a
+            // 4xx from Marktplaats (403 auth, 404, 410, 400, etc.), which is a
+            // content signal about this request and should not count against
+            // proxy health.
+            if ($statusCode >= 500) {
+                $this->failureCount++;
+            } else {
+                $this->contentFailureCount++;
+            }
 
             if ($statusCode === 410) {
                 throw new GoneException($this->buildStatusErrorMessage($statusCode), $statusCode);
@@ -172,6 +183,7 @@ class HttpTransport
      *     requests: int,
      *     successes: int,
      *     failures: int,
+     *     content_failures: int,
      *     retries: int,
      *     session_resets: int,
      *     last_request_at: ?float,
@@ -184,6 +196,7 @@ class HttpTransport
             'requests' => $this->requestCount,
             'successes' => $this->successCount,
             'failures' => $this->failureCount,
+            'content_failures' => $this->contentFailureCount,
             'retries' => $this->retryCount,
             'session_resets' => $this->sessionResetCount,
             'last_request_at' => $this->lastRequestAt,
@@ -197,6 +210,7 @@ class HttpTransport
         $this->requestCount = 0;
         $this->successCount = 0;
         $this->failureCount = 0;
+        $this->contentFailureCount = 0;
         $this->retryCount = 0;
         $this->sessionResetCount = 0;
         $this->lastRequestAt = null;

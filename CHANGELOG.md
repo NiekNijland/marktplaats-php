@@ -2,6 +2,16 @@
 
 All notable changes to `marktplaats-php` will be documented in this file.
 
+## v0.5.0 - 2026-04-16
+
+### Changed
+
+- Split `getStats()` failure tracking into transport-level (`failures`) and content-level (`content_failures`) counters. HTTP 4xx responses from Marktplaats (403 auth errors, 404/410 missing listings, 429 rate limits, 400 bad query) now increment `content_failures`; only HTTP 5xx and network / redirect errors increment `failures`. Callers that feed these stats into proxy-health tracking can now distinguish "this request was rejected by Marktplaats" from "the transport itself misbehaved".
+
+### Breaking
+
+- The `getStats()` return shape now includes a new `content_failures` field. Callers asserting on the exact array shape (e.g. strict equality against the whole stats array) need to be updated.
+
 ## v0.4.2 - 2026-04-04
 
 ### Summary

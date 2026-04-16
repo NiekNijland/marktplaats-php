@@ -1075,6 +1075,7 @@ class ClientTest extends TestCase
             'requests' => 2,
             'successes' => 2,
             'failures' => 0,
+            'content_failures' => 0,
             'retries' => 0,
             'session_resets' => 0,
             'total_sleep_ms' => 0.0,
@@ -1117,6 +1118,52 @@ class ClientTest extends TestCase
             $this->fail('Expected exception was not thrown.');
         } catch (ClientException) {
             $this->assertSame(1, $client->getStats()['failures']);
+            $this->assertSame(0, $client->getStats()['content_failures']);
+        }
+    }
+
+    public function test_stats_count_4xx_as_content_failures_not_transport_failures(): void
+    {
+        // 4xx responses come from Marktplaats deciding this request is not
+        // allowed (bot detection, expired listing, bad query). That's a content
+        // signal about the request, not evidence of a broken proxy, so it
+        // should not count against transport health.
+        $mock = new MockHandler([
+            new Response(403),
+            new Response(403),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+            maxRetries: 1,
+            retryDelayMilliseconds: 0,
+        );
+
+        try {
+            $client->getSearch(new SearchQuery(categoryId: 678));
+            $this->fail('Expected exception was not thrown.');
+        } catch (ClientException) {
+            $this->assertSame(0, $client->getStats()['failures']);
+            $this->assertSame(1, $client->getStats()['content_failures']);
+        }
+    }
+
+    public function test_stats_count_410_as_content_failure(): void
+    {
+        $mock = new MockHandler([
+            new Response(410),
+        ]);
+
+        $client = new Client(
+            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mock)]),
+        );
+
+        try {
+            $client->getListing('https://www.marktplaats.nl/v/motoren/motorcycles-custom/m1/some-slug.html');
+            $this->fail('Expected exception was not thrown.');
+        } catch (ClientException) {
+            $this->assertSame(0, $client->getStats()['failures']);
+            $this->assertSame(1, $client->getStats()['content_failures']);
         }
     }
 
@@ -1157,6 +1204,7 @@ class ClientTest extends TestCase
             'requests' => 0,
             'successes' => 0,
             'failures' => 0,
+            'content_failures' => 0,
             'retries' => 0,
             'session_resets' => 0,
             'last_request_at' => null,

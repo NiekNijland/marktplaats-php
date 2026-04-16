@@ -20,6 +20,7 @@ interface ClientInterface
      *     requests: int,
      *     successes: int,
      *     failures: int,
+     *     content_failures: int,
      *     retries: int,
      *     session_resets: int,
      *     last_request_at: ?float,
